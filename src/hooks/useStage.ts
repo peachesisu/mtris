@@ -12,28 +12,49 @@ export const useStage = (player: any, resetPlayer: () => void) => {
 
         const sweepRows = (newStage: any[]) => {
             let currentScoreDelta = 0;
-            const sweptStage = newStage.reduce((ack, row) => {
-                // Check if row is full: findIndex where cell.value === 0
-                if (row.findIndex((cell: any) => cell.value === 0) === -1) {
-                    // Calculate score: Sum of numbers (cell.num)
-                    const rowScore = row.reduce((sum: number, cell: any) => sum + (cell.num || 0), 0);
-                    currentScoreDelta += rowScore;
 
+            const sweptStage = newStage.reduce((ack, row) => {
+                // 1) 행이 꽉 찼는지 체크
+                const isFull = row.findIndex((cell: any) => cell.value === 0) === -1;
+
+                if (isFull) {
+                // 2) 숫자 합 계산
+                const rowScore = row.reduce(
+                    (sum: number, cell: any) => sum + (cell.num || 0),
+                    0
+                );
+
+                // 3) 합이 40 이상이면 삭제 + 점수 누적
+                if (rowScore >= 50) {
+                    currentScoreDelta += rowScore;
                     setRowsCleared((prev) => prev + 1);
-                    // Add new empty row at top
-                    // createStage uses Array.from maps.. we need strict object structure here
-                    ack.unshift(new Array(newStage[0].length).fill({ value: 0, status: 'clear', num: 0 }));
+
+                    // ✅ 새 빈 줄 추가 (중요: fill({}) 쓰면 같은 객체 참조가 복제돼서 버그남)
+                    ack.unshift(
+                    Array.from({ length: newStage[0].length }, () => ({
+                        value: 0,
+                        status: 'clear',
+                        num: 0,
+                    }))
+                    );
                     return ack;
                 }
+                // 4) 합이 40 미만이면 삭제하지 않음(그대로 유지)
                 ack.push(row);
                 return ack;
-            }, []);
+                }
+
+                // 꽉 차지 않은 행은 그대로 유지
+                ack.push(row);
+                return ack;
+            }, [] as any[]);
 
             if (currentScoreDelta > 0) {
                 setScoreDelta(currentScoreDelta);
             }
             return sweptStage;
-        };
+            };
+
 
         const updateStage = (prevStage: any[]) => {
             // First flush the stage from the previous render.
