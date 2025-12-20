@@ -54,6 +54,15 @@ body {
   padding: 20px;
 }
 
+.next-grid{
+  display: grid;
+  grid-template-columns: repeat(4, 40px);
+  grid-template-rows: repeat(4, 40px);
+  width: 160px;
+  height: 160px;
+}
+
+
 .next-piece-container {
   display: flex;
   flex-direction: column;

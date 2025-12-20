@@ -28,6 +28,7 @@ const Cell: React.FC<Props> = ({ type, num, status }) => {
     const CELL_SIZE = 40;
 
     const style: React.CSSProperties = {
+        boxSizing: 'border-box',
         width: `${CELL_SIZE}px`,
         height: `${CELL_SIZE}px`,
 

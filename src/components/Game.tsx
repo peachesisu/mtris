@@ -54,6 +54,18 @@ const Game: React.FC = () => {
      */
     const [stage, setStage, rowsCleared, scoreDelta] = useStage(player, resetPlayer);
 
+    const playerRef = React.useRef(player);
+    React.useEffect(() => {
+        playerRef.current = player;
+    }, [player]);
+
+    const stageRef = React.useRef(stage);
+    React.useEffect(() => {
+        stageRef.current = stage;
+    }, [stage]);
+
+
+
     /**
      * useGameStatus(rowsCleared, scoreDelta)
      * - 점수/줄/레벨 누적 관리
@@ -70,10 +82,14 @@ const Game: React.FC = () => {
      * 충돌이 없을 때만 이동
      */
     const movePlayer = (dir: number) => {
-        if (!checkCollision(player, stage, { x: dir, y: 0 })) {
+        const p = playerRef.current;
+        const s = stageRef.current;
+
+        if (!checkCollision(p, s, { x: dir, y: 0 })) {
             updatePlayerPos({ x: dir, y: 0, collided: false });
         }
     };
+
 
     /**
      * 게임 시작(리셋)
@@ -85,7 +101,7 @@ const Game: React.FC = () => {
     const startGame = () => {
         setStage(createStage());
         // 시간
-        setDropTime(300);   // 0.8초마다 자동으로 한 칸 drop (더 빠르게)
+        setDropTime(600);   // 0.8초마다 자동으로 한 칸 drop (더 빠르게)
         resetPlayer();
         setGameOver(false);
         setScore(0);
@@ -104,29 +120,31 @@ const Game: React.FC = () => {
      * - 레벨 상승 시 dropTime을 줄여서 속도 증가
      * - 아래로 못 내려가면 collided 처리(=고정/합치기 트리거)
      */
+
+    
     const drop = () => {
-        // 10줄 단위로 레벨 업
+        // 레벨 업 로직 동일
         if (rows > (level + 1) * 10) {
             setLevel((prev) => prev + 1);
-
-            // 레벨이 올라갈수록 더 빠르게 떨어지게 (ms가 작아짐)
             setDropTime(1000 / (level + 1) + 200);
         }
 
-        // 아래로 한 칸 내려도 충돌 없으면 이동
-        if (!checkCollision(player, stage, { x: 0, y: 1 })) {
+        const p = playerRef.current;
+        const s = stageRef.current;
+
+        if (!checkCollision(p, s, { x: 0, y: 1 })) {
             updatePlayerPos({ x: 0, y: 1, collided: false });
         } else {
-            // 충돌이 났는데, 블록이 맨 위에 가깝다면 게임오버
-            if (player.pos.y < 1) {
-                setGameOver(true);
-                setDropTime(null); // 자동 드롭 중단
+            if (p.pos.y < 1) {
+            setGameOver(true);
+            setDropTime(null);
+            return; // ★ 중요: 게임오버면 collided:true로 merge하지 않음
             }
 
-            // collided:true로 바꾸면 useStage가 블록을 stage에 '고정(merge)'하는 흐름이 보통 이어짐
             updatePlayerPos({ x: 0, y: 0, collided: true });
         }
-    };
+        };
+
 
     /**
      * 하드 드롭(스페이스바)
