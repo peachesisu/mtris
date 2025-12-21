@@ -25,7 +25,7 @@ export const useStage = (player: any, resetPlayer: () => void) => {
                     0
                 );
 
-                if (rowScore >= 50) {
+                if (rowScore >=60) {
                     currentScoreDelta += rowScore;
                     rowsToClear.push(y);
 

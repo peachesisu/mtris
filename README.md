@@ -3,7 +3,7 @@ kyeongbuk science highschool - math tetris (2025, 32nd)
 
 ### 게임 플레이
 - https://mtris.site/
-- 합이 50 이상인 열만 블럭을 꺨 수 있습니다. 최고 점수를 갱신해보세요!
+- 합이 60 이상인 열만 블럭을 꺨 수 있습니다. 최고 점수를 갱신해보세요!
 
 <img width="1513" height="882" alt="스크린샷 2025-12-21 오후 12 52 03" src="https://github.com/user-attachments/assets/40e2b741-1f44-4e86-8ed2-20646589ab89" />
 <img width="948" height="933" alt="스크린샷 2025-12-21 오전 8 51 52" src="https://github.com/user-attachments/assets/df2ad584-2624-495f-b5e9-9dd1c49093ff" />

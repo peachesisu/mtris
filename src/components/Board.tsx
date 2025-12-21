@@ -74,10 +74,10 @@ const Board: React.FC<Props> = ({ stage, clearedRows = [] }) => {
                     const isRowFull = row.every((c: any) => c.value !== 0);
                     // 해당 행의 점수 합계
                     const rowSum = rowSums[y];
-                    // 꽉 찼는데 50점이 안 되면 경고 (빨간색 숫자)
+                    // 꽉 찼는데 60점이 안 되면 경고 (빨간색 숫자)
                     // *주의: clearedRows 에는 이미 지와진 행 인덱스가 들어있으므로, 
                     // 여기 남은 행 중에서 '꽉 찼는데 안 지워진(점수 미달)' 경우를 식별
-                    const isWarning = isRowFull && rowSum < 50;
+                    const isWarning = isRowFull && rowSum < 60;
 
                     return row.map((cell: any, x: number) => (
                         <Cell

@@ -132,8 +132,8 @@ const Game: React.FC = () => {
      */
     const startGame = () => {
         setStage(createStage());
-        // 시간
-        setDropTime(1200);   // 0.8초마다 자동으로 한 칸 drop (더 빠르게)
+        // 드롭속도
+        setDropTime(600);   // 0.8초마다 자동으로 한 칸 drop (더 빠르게)
         resetPlayer();
         setGameOver(false);
         setScore(0);
@@ -163,7 +163,7 @@ const Game: React.FC = () => {
         audio.pause();
         audio.currentTime = 0;
     }
-    const CLEAR_THRESHOLD = 50; // "합이 50 이상이면 삭제" 기준과 동일하게 맞추기
+    const CLEAR_THRESHOLD = 60; // "합이 60 이상이면 삭제" 기준과 동일하게 맞추기
 
     const boom = () => {
         setStage((prev) => {
@@ -189,7 +189,7 @@ const Game: React.FC = () => {
             // 아래에서부터 "빨간 줄" 찾기
             // 조건: (1) 꽉 찼음 (value != 0)
             //      (2) 전부 merged(고정된 블록만)  -> 떨어지는 블록 줄 삭제 방지
-            //      (3) num 합 < 50 (빨간 줄)
+            //      (3) num 합 < 60 (빨간 줄)
             let targetIdx = -1;
             for (let y = height - 1; y >= 0; y--) {
             const row = newStage[y];

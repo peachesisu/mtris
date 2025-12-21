@@ -94,7 +94,7 @@ const GameRules: React.FC = () => {
                     • Complete rows to score.
                 </div>
                 <div style={ruleItemStyle}>
-                    • <span style={{ color: '#ff00ff' }}>SUM ≥ 50</span> to clear a line!
+                    • <span style={{ color: '#ff00ff' }}>SUM ≥ 60</span> to clear a line!
                 </div>
                 <div style={ruleItemStyle}>
                     • <span style={{ color: '#ff0000' }}>RED</span> numbers mean the row is full but sum is too low.
