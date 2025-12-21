@@ -20,10 +20,27 @@ import Ranking from './Ranking';
 import titleImg from '../assets/MP-TETRIS-Title.png';
 import tetrisBgm from '../assets/tetrisbgm.mp3';
 import GameRules from './GameRules';
+import { io, Socket } from 'socket.io-client';
 
 const Game: React.FC = () => {
     // 게임 영역 포커스용 ref (키보드 입력을 바로 받기 위함)
     const gameAreaRef = React.useRef<HTMLDivElement>(null);
+    const socketRef = React.useRef<Socket | null>(null);
+
+    // Initial Nickname State
+    const [nickname, setNickname] = useState<string>('');
+    const [isNicknameSet, setIsNicknameSet] = useState(false);
+
+    // Socket Connection
+    React.useEffect(() => {
+        // Connect to local backend (or configurable URL)
+        socketRef.current = io('http://localhost:3000');
+        return () => {
+            if (socketRef.current) {
+                socketRef.current.disconnect();
+            }
+        };
+    }, []);
 
     /**
      * dropTime: 블록이 자동으로 떨어지는 속도(ms)
@@ -80,6 +97,17 @@ const Game: React.FC = () => {
         rowsCleared,
         scoreDelta
     );
+
+    // Emit state update to server for Spectator Mode
+    React.useEffect(() => {
+        if (socketRef.current && isNicknameSet) {
+            socketRef.current.emit('update_state', {
+                nickname,
+                stage,
+                score
+            });
+        }
+    }, [stage, score, nickname, isNicknameSet]);
 
     /**
      * 좌/우 이동
@@ -239,6 +267,52 @@ const Game: React.FC = () => {
         drop();
     }, dropTime);
 
+    // Initial Nickname Screen
+    if (!isNicknameSet) {
+        return (
+            <div style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                height: '100vh', color: 'white', fontFamily: "'Orbitron', sans-serif"
+            }}>
+                <img src={titleImg} alt="Tetris Title" style={{ width: '600px', marginBottom: '40px' }} />
+
+                <div style={{
+                    background: 'rgba(0,0,0,0.8)', padding: '40px', borderRadius: '20px',
+                    border: '1px solid rgba(255,255,255,0.2)', boxShadow: '0 0 20px rgba(0,0,0,0.5)',
+                    display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center'
+                }}>
+                    <h2>ENTER NICKNAME</h2>
+                    <form onSubmit={(e) => {
+                        e.preventDefault();
+                        if (nickname.trim()) setIsNicknameSet(true);
+                    }}>
+                        <input
+                            type="text"
+                            value={nickname}
+                            onChange={(e) => setNickname(e.target.value)}
+                            placeholder="Nickname"
+                            maxLength={10}
+                            style={{
+                                padding: '15px', fontSize: '20px', textAlign: 'center',
+                                background: '#333', color: 'white', border: '1px solid #555', borderRadius: '5px',
+                                fontFamily: "'Orbitron', sans-serif"
+                            }}
+                            autoFocus
+                        />
+                        <div style={{ height: '20px' }}></div>
+                        <button type="submit" style={{
+                            padding: '15px 40px', fontSize: '20px', cursor: 'pointer',
+                            background: '#dfd924', color: 'black', fontWeight: 'bold', border: 'none', borderRadius: '5px',
+                            fontFamily: "'Orbitron', sans-serif"
+                        }}>
+                            START
+                        </button>
+                    </form>
+                </div>
+            </div>
+        );
+    }
+
     /**
      * 화면 렌더링(UI)
      * - 타이틀 이미지
@@ -274,6 +348,12 @@ const Game: React.FC = () => {
                 <div className="game-container">
                     {/* 왼쪽 패널: 상태 표시 + 시작 버튼 */}
                     <aside className="game-status">
+                        <div style={{
+                            fontSize: '24px', color: '#dfd924', marginBottom: '20px', textAlign: 'center',
+                            textShadow: '0 0 10px rgba(223, 217, 36, 0.5)'
+                        }}>
+                            {nickname}
+                        </div>
                         <div>
                             <Display text={`Score : ${score}`} />
                             <Display text={`Rows : ${rows}`} />
@@ -298,8 +378,7 @@ const Game: React.FC = () => {
                                 <form
                                     onSubmit={(e) => {
                                         e.preventDefault();
-                                        const form = e.target as HTMLFormElement;
-                                        const nickname = (form.elements.namedItem('nickname') as HTMLInputElement).value;
+                                        // Use the session nickname for submission too
                                         if (nickname) {
                                             fetch('http://localhost:3000/api/ranks', {
                                                 method: 'POST',
@@ -315,20 +394,12 @@ const Game: React.FC = () => {
                                     }}
                                     style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}
                                 >
-                                    <input
-                                        name="nickname"
-                                        placeholder="NICKNAME"
-                                        maxLength={10}
-                                        style={{
-                                            padding: '10px',
-                                            fontSize: '18px',
-                                            borderRadius: '5px',
-                                            border: 'none',
-                                            textAlign: 'center',
-                                            fontFamily: "'Orbitron', sans-serif"
-                                        }}
-                                        autoFocus
-                                    />
+                                    {/* Read-only nickname as it is already set */}
+                                    <div style={{
+                                        fontSize: '24px', color: '#dfd924', marginBottom: '10px'
+                                    }}>
+                                        {nickname}
+                                    </div>
                                     <button
                                         type="submit"
                                         style={{

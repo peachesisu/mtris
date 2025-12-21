@@ -54,7 +54,15 @@ const db = new sqlite3.Database(dbPath, (err) => {
     }
 });
 
-// ... (Rest of DB code and API Routes remain the same) ...
+// Create table if not exists
+db.serialize(() => {
+    db.run(`
+        CREATE TABLE IF NOT EXISTS ranks (
+            nickname TEXT PRIMARY KEY,
+            score INTEGER
+        )
+    `);
+});
 
 // GET /api/ranks - Get Top 20
 app.get('/api/ranks', (req, res) => {

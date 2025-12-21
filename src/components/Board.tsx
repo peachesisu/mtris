@@ -61,27 +61,7 @@ const Board: React.FC<Props> = ({ stage, clearedRows = [] }) => {
         background: 'rgba(0,0,0,0.25)',
     };
 
-    const explosionStyle = (y: number): React.CSSProperties => ({
-        position: 'absolute',
-        // Note: We need to map row index y back to pixel position accurately.
-        // Assuming gridGap 1px and CELL_SIZE 40px, but CSS grid is fluid if width 100%.
-        // However, we set explicit cell size in Cell, but Board is using grid-template with 1fr.
-        // Let's use percentage or row calculation if possible.
-        // Safest is to calculate based on row index * height roughly
-        // OR better: use a transparent grid overlay.
-        // But simplest: `top: calc(y * (40px + 1px))` since we have strict pixel sizes in Cell?
-        // Actually Board uses 1fr. If Cells are fixed 40px, then Board should be auto sized.
-        // Let's assume standard height:
-        top: `${y * (CELL_SIZE + 1)}px`, // approximate (+1 for gap)
-        left: 0,
-        width: '100%',
-        height: `${CELL_SIZE}px`,
-        background: 'white',
-        zIndex: 100,
-        pointerEvents: 'none',
-        animation: 'firework 0.5s ease-out forwards',
-        boxShadow: '0 0 20px 10px rgba(255, 165, 0, 0.8)',
-    });
+
 
     return (
         <div style={wrapperStyle}>
