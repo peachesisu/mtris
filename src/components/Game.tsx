@@ -14,10 +14,12 @@ import Board from './Board';
 import Display from './Display';
 import StartButton from './StartButton';
 import NextPiece from './NextPiece';
+import Ranking from './Ranking';
 
 // 타이틀 이미지
 import titleImg from '../assets/MP-TETRIS-Title.png';
 import tetrisBgm from '../assets/tetrisbgm.mp3';
+import GameRules from './GameRules';
 
 const Game: React.FC = () => {
     // 게임 영역 포커스용 ref (키보드 입력을 바로 받기 위함)
@@ -52,8 +54,9 @@ const Game: React.FC = () => {
      * - collided가 true가 되면 stage에 합쳐서 고정(merge)하고 다음 블록을 resetPlayer로 스폰
      * - rowsCleared: 이번 프레임에서 지운 줄 수
      * - scoreDelta: 이번 프레임에서 증가할 점수량(줄 수 기반)
+     * - clearedRows: 이번에 지워진 줄의 인덱스 목록
      */
-    const [stage, setStage, rowsCleared, scoreDelta] = useStage(player, resetPlayer);
+    const [stage, setStage, rowsCleared, scoreDelta, clearedRows] = useStage(player, resetPlayer);
 
     const playerRef = React.useRef(player);
     React.useEffect(() => {
@@ -91,7 +94,6 @@ const Game: React.FC = () => {
             updatePlayerPos({ x: dir, y: 0, collided: false });
         }
     };
-
 
     /**
      * 게임 시작(리셋)
@@ -132,7 +134,7 @@ const Game: React.FC = () => {
 
         audio.pause();
         audio.currentTime = 0;
-    } 
+    }
 
 
     /**
@@ -142,7 +144,7 @@ const Game: React.FC = () => {
      * - 아래로 못 내려가면 collided 처리(=고정/합치기 트리거)
      */
 
-    
+
     const drop = () => {
         // 레벨 업 로직 동일
         if (rows > (level + 1) * 10) {
@@ -156,17 +158,17 @@ const Game: React.FC = () => {
         if (!checkCollision(p, s, { x: 0, y: 1 })) {
             updatePlayerPos({ x: 0, y: 1, collided: false });
         } else {
-            if (p.pos.y < 1) {
-            setGameOver(true);
-            setDropTime(null);
-            overGame();
-            return; // ★ 중요: 게임오버면 collided:true로 merge하지 않음
-            }
-
+            // 1. 우선 충돌 상태로 업데이트 (화면에 고정시키기 위함)
             updatePlayerPos({ x: 0, y: 0, collided: true });
-        }
-        };
 
+            // 2. 그 후 게임오버 체크
+            if (p.pos.y < 1) {
+                setGameOver(true);
+                setDropTime(null);
+                overGame();
+            }
+        }
+    };
 
     /**
      * 하드 드롭(스페이스바)
@@ -263,6 +265,12 @@ const Game: React.FC = () => {
                 onKeyUp={keyUp}
                 ref={gameAreaRef}
             >
+                {/* 게임 룰 */}
+                <aside className="game-rules-panel">
+                    <div style={{ height: '20px' }} />
+                    <GameRules />
+                </aside>
+
                 <div className="game-container">
                     {/* 왼쪽 패널: 상태 표시 + 시작 버튼 */}
                     <aside className="game-status">
@@ -277,23 +285,86 @@ const Game: React.FC = () => {
 
                     {/* 가운데: 게임 보드 */}
                     <div className="board-container">
-                        <Board stage={stage} />
+                        {/* Board에 clearedRows 전달 */}
+                        <Board stage={stage} clearedRows={clearedRows} />
 
                         {/* 게임 오버 시 오버레이 */}
                         {gameOver && (
                             <div className="game-over-overlay">
                                 <h1>GAME OVER</h1>
-                                <p>Score : {score}</p>
+                                <h1>{score}</h1>
+                                <div style={{ height: '30px' }} />
+
+                                <form
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        const form = e.target as HTMLFormElement;
+                                        const nickname = (form.elements.namedItem('nickname') as HTMLInputElement).value;
+                                        if (nickname) {
+                                            fetch('http://localhost:3000/api/ranks', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ nickname, score }),
+                                            })
+                                                .then(res => res.json())
+                                                .then(() => {
+                                                    alert('Score Submitted!');
+                                                })
+                                                .catch(err => console.error(err));
+                                        }
+                                    }}
+                                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}
+                                >
+                                    <input
+                                        name="nickname"
+                                        placeholder="NICKNAME"
+                                        maxLength={10}
+                                        style={{
+                                            padding: '10px',
+                                            fontSize: '18px',
+                                            borderRadius: '5px',
+                                            border: 'none',
+                                            textAlign: 'center',
+                                            fontFamily: "'Orbitron', sans-serif"
+                                        }}
+                                        autoFocus
+                                    />
+                                    <button
+                                        type="submit"
+                                        style={{
+                                            padding: '10px 20px',
+                                            fontSize: '18px',
+                                            borderRadius: '5px',
+                                            border: 'none',
+                                            background: '#dfd924',
+                                            color: 'black',
+                                            cursor: 'pointer',
+                                            fontFamily: "'Orbitron', sans-serif",
+                                            fontWeight: 'bold'
+                                        }}
+                                    >
+                                        SUBMIT SCORE
+                                    </button>
+                                </form>
+
+                                <div style={{ height: '30px' }} />
                                 <StartButton callback={startGame} />
                             </div>
                         )}
                     </div>
 
                     {/* 오른쪽: 다음 블록 미리보기 */}
-                    <aside className="game-right-panel">
+                    <aside className="game-next-panel">
                         <NextPiece tetromino={nextTetromino} />
+                        <div style={{ height: '20px' }} />
                     </aside>
                 </div>
+
+                {/* 랭킹 */}
+                <aside className="game-ranking-panel">
+                    <div style={{ height: '20px' }} />
+                    <Ranking />
+                </aside>
             </div>
         </div>
     );

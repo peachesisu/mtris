@@ -47,14 +47,28 @@ body {
   backdrop-filter: blur(5px);
 }
 
-/* Left Panel for Next Piece */
-.game-right-panel {
+/* Aside Panel */
+.game-rules-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  margin-right: 20px;
+}
+
+.game-next-panel {
   display: flex;
   flex-direction: column;
   padding: 20px;
 }
 
-.next-grid{
+.game-ranking-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  margin-left: 20px;
+}
+
+.next-grid {
   display: grid;
   grid-template-columns: repeat(4, 40px);
   grid-template-rows: repeat(4, 40px);
@@ -102,8 +116,8 @@ body {
 }
 
 .game-over-overlay h1 {
-  font-size: 3rem;
-  margin-bottom: 20px;
+  font-size: 50px;
+  margin-bottom: 10px;
 }
 
 /* Board specific override since we use inline styles for grid mostly */
@@ -179,13 +193,81 @@ body {
 /* Landing/Merge Effect */
 @keyframes land {
   0% {
-    transform: scale(1.2);
-    filter: brightness(2);
+    transform: scale(1.3);
+    filter: brightness(3) saturate(2);
+    box-shadow:
+      0 0 30px 15px rgba(255, 255, 150, 0.8),
+      /* Center white-hot flash */
+      0 0 60px 30px rgba(255, 100, 0, 0.6);
+    /* Outer orange glow */
+    border-color: #fff;
+    z-index: 100;
+  }
+
+  30% {
+    transform: scale(1.1);
+    filter: brightness(2) saturate(1.5);
+    box-shadow:
+      0 0 15px 10px rgba(255, 200, 50, 0.6),
+      0 0 30px 20px rgba(255, 50, 0, 0.4);
+    z-index: 100;
+  }
+
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+    box-shadow: none;
+    z-index: 10;
+  }
+}
+
+.cell.merged {
+  animation: land 0.25s ease-out;
+  position: relative;
+  /* Ensure z-index works */
+}
+
+/* Firework Line Effect */
+@keyframes firework-burst {
+  0% {
+    transform: scaleX(0);
+    opacity: 1;
+    background: white;
+    box-shadow: 0 0 50px white;
   }
 
   50% {
-    transform: scale(1.1);
-    filter: brightness(1.5);
+    transform: scaleX(1);
+    opacity: 1;
+    background: cyan;
+    box-shadow: 0 0 50px cyan, 0 0 100px violet;
+  }
+
+  100% {
+    transform: scaleX(1.5);
+    opacity: 0;
+    background: transparent;
+  }
+}
+
+.firework-line {
+  width: 100%;
+  height: 100%;
+  animation: firework-burst 0.4s ease-out forwards;
+}
+
+/* Score Pop Effect */
+@keyframes score-pop {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+
+  30% {
+    transform: scale(1.5);
+    color: yellow;
+    text-shadow: 0 0 20px red;
+    filter: brightness(2);
   }
 
   100% {
@@ -194,7 +276,6 @@ body {
   }
 }
 
-.cell.merged {
-  animation: land 0.1s ease-out;
-  z-index: 10;
+.display.pop {
+  animation: score-pop 0.3s ease-out;
 }

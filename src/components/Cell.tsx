@@ -11,18 +11,23 @@ interface Props {
 
     // 셀 상태 (clear | merged) - merged일 때 효과 적용
     status?: string;
+
+    // 점수 미달인 경우 (빨간색)
+    isWarning?: boolean;
 }
 
 // 게임 보드의 한 칸을 표현하는 컴포넌트
-const Cell: React.FC<Props> = ({ type, num, status }) => {
+const Cell: React.FC<Props> = ({ type, num, status, isWarning }) => {
 
     // 현재 셀이 테트로미노인지 여부
     const isTetromino = type !== 0;
 
     // 테트로미노라면 해당 색상 사용, 아니면 검정
-    const color = isTetromino
-        ? TETROMINOS[type].color
-        : '0, 0, 0';
+    const color = isWarning
+        ? '255, 0, 0' // 경고 상태일 때 빨간색
+        : isTetromino
+            ? TETROMINOS[type].color
+            : '0, 0, 0';
 
     // 셀 스타일 동적 설정
     const CELL_SIZE = 40;
@@ -65,15 +70,18 @@ const Cell: React.FC<Props> = ({ type, num, status }) => {
                inset 0 0 5px rgba(${color}, 0.5)`
             : 'none',
 
+        textShadow: isTetromino ? '0 0 2px rgba(0,0,0,0.5)' : 'none',
+
+        // Warning일 때 빨간색, 아니면 기본 색상 (흰색/투명 등)
+        color: isWarning ? '#ff0000' : (isTetromino ? 'rgba(255, 255, 255, 0.9)' : 'transparent'),
+        fontWeight: isWarning ? 900 : 'bold',
+
         // 중앙 정렬 (숫자 표시용)
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
 
         fontSize: '22px',
-        color: 'rgba(255, 255, 255, 0.8)',
-        textShadow: '0 0 2px #000',
-        fontWeight: 'bold',
     };
 
     return (
