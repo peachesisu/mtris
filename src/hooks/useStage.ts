@@ -15,51 +15,44 @@ export const useStage = (player: any, resetPlayer: () => void) => {
         const sweepRows = (newStage: any[]) => {
             let currentScoreDelta = 0;
             const rowsToClear: number[] = [];
+
             const sweptStage = newStage.reduce((ack, row, y) => {
-                // 1) 행이 꽉 찼는지 체크
                 const isFull = row.findIndex((cell: any) => cell.value === 0) === -1;
 
                 if (isFull) {
-                    // 2) 숫자 합 계산
-                    const rowScore = row.reduce(
-                        (sum: number, cell: any) => sum + (cell.num || 0),
-                        0
+                const rowScore = row.reduce(
+                    (sum: number, cell: any) => sum + (cell.num || 0),
+                    0
+                );
+
+                if (rowScore >= 50) {
+                    currentScoreDelta += rowScore;
+                    rowsToClear.push(y);
+
+                    // 빈 줄 추가
+                    ack.unshift(
+                    Array.from({ length: newStage[0].length }, () => ({
+                        value: 0,
+                        status: 'clear',
+                        num: 0,
+                    }))
                     );
-
-                    // 3) 합이 50 이상이면 삭제 + 점수 누적
-                    if (rowScore >= 50) {
-                        currentScoreDelta += rowScore;
-                        setRowsCleared((prev) => prev + 1);
-                        rowsToClear.push(y); // Capture the original row index
-
-                        // ✅ 새 빈 줄 추가
-                        ack.unshift(
-                            Array.from({ length: newStage[0].length }, () => ({
-                                value: 0,
-                                status: 'clear',
-                                num: 0,
-                            }))
-                        );
-                        return ack;
-                    }
-                    // 4) 합이 50 미만이면 삭제하지 않음(그대로 유지)
-                    ack.push(row);
                     return ack;
                 }
+                }
 
-                // 꽉 차지 않은 행은 그대로 유지
                 ack.push(row);
                 return ack;
             }, [] as any[]);
 
-            if (currentScoreDelta > 0) {
-                setScoreDelta(currentScoreDelta);
-            }
-            if (rowsToClear.length > 0) {
-                setClearedRows(rowsToClear);
-            }
+            // ✅ 여기서 "한 번만" set
+            setRowsCleared(rowsToClear.length);
+            setScoreDelta(currentScoreDelta);
+            setClearedRows(rowsToClear);
+
             return sweptStage;
-        };
+            };
+
 
 
         const updateStage = (prevStage: any[]) => {

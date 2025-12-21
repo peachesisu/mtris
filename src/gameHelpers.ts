@@ -134,7 +134,10 @@ export const randomTetromino = (): { shape: TetrominoCell[][]; color: string } =
     // 블록에만 1~9 부여
     for (const row of shape) {
         for (let i = 0; i < row.length; i++) {
+            // test : 랜덤
             if (row[i].value !== 0) row[i] = { ...row[i], num: Math.floor(Math.random() * 9) + 1 };
+            // if (row[i].value !== 0) row[i] = { ...row[i], num: 1 };
+
         }
     }
 

@@ -8,7 +8,7 @@ export const useGameStatus = (rowsCleared: number, scoreDelta: number) => {
     useEffect(() => {
         if (scoreDelta > 0) {
             // Add the sum of numbers
-            setScore((prev) => prev + scoreDelta * (level + 1));
+            setScore((prev) => prev + scoreDelta);
             setRows((prev) => prev + rowsCleared);
             setLevel((prev) => prev + rowsCleared);
         }

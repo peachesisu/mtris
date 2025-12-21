@@ -133,7 +133,7 @@ const Game: React.FC = () => {
     const startGame = () => {
         setStage(createStage());
         // 시간
-        setDropTime(600);   // 0.8초마다 자동으로 한 칸 drop (더 빠르게)
+        setDropTime(1200);   // 0.8초마다 자동으로 한 칸 drop (더 빠르게)
         resetPlayer();
         setGameOver(false);
         setScore(0);
@@ -163,6 +163,60 @@ const Game: React.FC = () => {
         audio.pause();
         audio.currentTime = 0;
     }
+    const CLEAR_THRESHOLD = 50; // "합이 50 이상이면 삭제" 기준과 동일하게 맞추기
+
+    const boom = () => {
+        setStage((prev) => {
+            if (!prev || prev.length === 0) return prev;
+
+            const height = prev.length;
+            const width = prev[0].length;
+
+            // 빈 줄 만들기 (중요: 매 칸 객체 새로 생성)
+            type StageCell = (typeof stage)[number][number];
+
+            const emptyRow: StageCell[] = Array.from({ length: width }, () => ({
+            value: 0,
+            status: 'clear',
+            num: 0,
+            })) as StageCell[];
+
+
+
+            // 깊은 복사(셀 객체까지) - 안전
+            const newStage = prev.map((row) => row.map((cell) => ({ ...cell })));
+
+            // 아래에서부터 "빨간 줄" 찾기
+            // 조건: (1) 꽉 찼음 (value != 0)
+            //      (2) 전부 merged(고정된 블록만)  -> 떨어지는 블록 줄 삭제 방지
+            //      (3) num 합 < 50 (빨간 줄)
+            let targetIdx = -1;
+            for (let y = height - 1; y >= 0; y--) {
+            const row = newStage[y];
+
+            const isFull = row.every((c) => c.value !== 0);
+            const isMergedRow = row.every((c) => c.status === 'merged');
+            if (!isFull || !isMergedRow) continue;
+
+            const rowSum = row.reduce((sum, c) => sum + (c.num || 0), 0);
+            if (rowSum < CLEAR_THRESHOLD) {
+                targetIdx = y;
+                break;
+            }
+            }
+
+            // 빨간 줄이 없으면 그대로
+            if (targetIdx === -1) return prev;
+
+            // 해당 줄 제거 + 맨 위에 빈 줄 추가
+            newStage.splice(targetIdx, 1);
+            newStage.unshift(emptyRow);
+
+            return newStage;
+        });
+    };
+
+    
 
 
     /**
@@ -254,6 +308,9 @@ const Game: React.FC = () => {
                 playerRotate(stage, 1);
             } else if (keyCode === 32) {
                 hardDrop();
+            }
+            else if (keyCode === 66) { // b/B
+                boom();
             }
         }
     };
@@ -357,7 +414,7 @@ const Game: React.FC = () => {
                         <div>
                             <Display text={`Score : ${score}`} />
                             <Display text={`Rows : ${rows}`} />
-                            <Display text={`Level : ${level}`} />
+                            {/* <Display text={`Level : ${level}`} /> */}
                         </div>
                         <div style={{ height: '50px' }} />
                         {!gameOver && <StartButton callback={startGame} />}
