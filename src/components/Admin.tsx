@@ -11,7 +11,7 @@ interface PlayerParams {
   score: number;
 }
 
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD ?? 'removeisR'; 
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD ?? 'Riswell'; 
 // .env에 VITE_ADMIN_PASSWORD=xxxx 넣으면 그걸 사용
 // 없으면 기본값 '1234' (원하면 바꾸세요)
 

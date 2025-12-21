@@ -18,4 +18,4 @@ kyeongbuk science highschool - math tetris (2025, 32nd)
 <img width="1366" height="908" alt="스크린샷 2025-12-21 오후 1 16 34" src="https://github.com/user-attachments/assets/ba87e499-d042-45a0-9d42-9c26b6fadfc7" />
 
 ### 관전모드 관리자 비번
-removeisR
+Riswell
