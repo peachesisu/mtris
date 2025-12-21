@@ -36,20 +36,14 @@ jobs:
       uses: docker/setup-buildx-action@v3
 
     - name: Build and Push Backend
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
       run: |
-        docker build -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:backend-${{ github.sha }} ./server
-        docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:backend-${{ github.sha }}
+        docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:backend-${{ github.sha }} ./server
+        docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:backend-${{ github.sha }}
 
     - name: Build and Push Frontend
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
       run: |
-        docker build -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:frontend-${{ github.sha }} .
-        docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:frontend-${{ github.sha }}
+        docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:frontend-${{ github.sha }} .
+        docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:frontend-${{ github.sha }}
 
     - name: Prepare directory on EC2
       uses: appleboy/ssh-action@v1.2.0
@@ -70,30 +64,31 @@ jobs:
 
     - name: Deploy on EC2
       uses: appleboy/ssh-action@v1.2.0
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_PASSWORD: ${{ steps.login-ecr.outputs.docker_login_password }}
-        IMAGE_TAG: ${{ github.sha }}
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
-        envs: ECR_REGISTRY,ECR_PASSWORD,IMAGE_TAG
         script: |
           set -e
-          echo "Logging in to ECR..."
-          # Use printf to avoid non-TTY interaction issues
-          printf "$ECR_PASSWORD" | docker login --username AWS --password-stdin $ECR_REGISTRY
-          
+          set -x
+
+          ECR_REGISTRY="${{ steps.login-ecr.outputs.registry }}"
+          IMAGE_TAG="${{ github.sha }}"
+
+          echo "ECR_REGISTRY=[$ECR_REGISTRY]"
+          echo "IMAGE_TAG=[$IMAGE_TAG]"
+          test -n "$ECR_REGISTRY"
+          test -n "$IMAGE_TAG"
+
+          aws --version
+          aws sts get-caller-identity
+
+          aws ecr get-login-password --region ap-northeast-2 \
+            | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+
           cd ~/tetris
-          echo "Pulling latest images (Tag: $IMAGE_TAG)..."
-          export ECR_REGISTRY=$ECR_REGISTRY
-          export IMAGE_TAG=$IMAGE_TAG
+          export ECR_REGISTRY IMAGE_TAG
+
           docker compose pull
-          
-          echo "Restarting containers..."
           docker compose up -d --remove-orphans
-          
-          echo "Cleaning up old images..."
           docker image prune -f
-          echo "Deployment successful!"

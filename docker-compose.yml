@@ -1,21 +1,16 @@
-version: '3.8'
+version: "3.8"
 
 services:
   backend:
-    image: ${ECR_REGISTRY:-tetris}/tetris-game:backend-${IMAGE_TAG:-latest}
-    build:
-      context: ./server
+    image: ${ECR_REGISTRY}/tetris-game:backend-${IMAGE_TAG}
     ports:
       - "3000:3000"
     volumes:
-      # Persist SQLite DB
       - ./server/ranks.db:/app/ranks.db
     restart: always
 
   frontend:
-    image: ${ECR_REGISTRY:-tetris}/tetris-game:frontend-${IMAGE_TAG:-latest}
-    build:
-      context: .
+    image: ${ECR_REGISTRY}/tetris-game:frontend-${IMAGE_TAG}
     ports:
       - "8080:80"
     depends_on:
