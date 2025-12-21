@@ -309,7 +309,7 @@ const Game: React.FC = () => {
             } else if (keyCode === 32) {
                 hardDrop();
             }
-            else if (keyCode === 66) { // b/B
+            else if (keyCode === 82) { // b/B
                 boom();
             }
         }
