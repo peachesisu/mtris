@@ -15,5 +15,4 @@ kyeongbuk science highschool - math tetris (2025, 32nd)
 - https://mtris.site/spectator
 - 여러 사람들의 플레이를 관전할 수 있습니다
 
-<img width="1357" height="968" alt="스크린샷 2025-12-21 오후 1 03 56" src="https://github.com/user-attachments/assets/74e59ded-c4d4-4764-9f03-e885ca5b62a6" />
 <img width="1366" height="908" alt="스크린샷 2025-12-21 오후 1 16 34" src="https://github.com/user-attachments/assets/ba87e499-d042-45a0-9d42-9c26b6fadfc7" />
