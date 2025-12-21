@@ -17,7 +17,7 @@ const Admin: React.FC = () => {
     useEffect(() => {
         // Connect to the backend
         // Note: Hardcoded localhost for now. In production, use window.location.hostname
-        const socket = io('http://localhost:3000');
+        const socket = io(); // Connect to the same host in production
 
         socket.on('connect', () => {
             console.log('Connected to admin socket');

@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Game from './components/Game';
-import Admin from './components/Admin.tsx';
+import Admin from './components/Admin';
 
 const App: React.FC = () => {
   return (

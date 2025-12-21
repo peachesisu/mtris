@@ -34,7 +34,7 @@ const Game: React.FC = () => {
     // Socket Connection
     React.useEffect(() => {
         // Connect to local backend (or configurable URL)
-        socketRef.current = io('http://localhost:3000');
+        socketRef.current = io();
         return () => {
             if (socketRef.current) {
                 socketRef.current.disconnect();
@@ -380,7 +380,7 @@ const Game: React.FC = () => {
                                         e.preventDefault();
                                         // Use the session nickname for submission too
                                         if (nickname) {
-                                            fetch('http://localhost:3000/api/ranks', {
+                                            fetch('/api/ranks', {
                                                 method: 'POST',
                                                 headers: { 'Content-Type': 'application/json' },
                                                 body: JSON.stringify({ nickname, score }),

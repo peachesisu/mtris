@@ -11,7 +11,7 @@ const Ranking: React.FC = () => {
 
     const fetchRanks = async () => {
         try {
-            const response = await fetch('http://localhost:3000/api/ranks');
+            const response = await fetch('/api/ranks');
             if (response.ok) {
                 const data = await response.json();
                 setRanks(data.data);
