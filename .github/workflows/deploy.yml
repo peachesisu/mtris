@@ -40,16 +40,16 @@ jobs:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:backend-${{ github.sha }} ./server
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:backend-${{ github.sha }}
+        docker build -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:backend-${{ github.sha }} ./server
+        docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:backend-${{ github.sha }}
 
     - name: Build and Push Frontend
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:frontend-${{ github.sha }} .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:frontend-${{ github.sha }}
+        docker build -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:frontend-${{ github.sha }} .
+        docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:frontend-${{ github.sha }}
 
     - name: Prepare directory on EC2
       uses: appleboy/ssh-action@v1.2.0
@@ -82,7 +82,8 @@ jobs:
         script: |
           set -e
           echo "Logging in to ECR..."
-          echo $ECR_PASSWORD | docker login --username AWS --password-stdin $ECR_REGISTRY
+          # Use printf to avoid non-TTY interaction issues
+          printf "$ECR_PASSWORD" | docker login --username AWS --password-stdin $ECR_REGISTRY
           
           cd ~/tetris
           echo "Pulling latest images (Tag: $IMAGE_TAG)..."
