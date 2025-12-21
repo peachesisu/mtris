@@ -2,8 +2,8 @@ version: '3.8'
 
 services:
   backend:
-    image: ${ECR_REGISTRY:-tetris}/tetris-game:backend
-    build: 
+    image: ${ECR_REGISTRY:-tetris}/tetris-game:backend-${IMAGE_TAG:-latest}
+    build:
       context: ./server
     ports:
       - "3000:3000"
@@ -13,8 +13,8 @@ services:
     restart: always
 
   frontend:
-    image: ${ECR_REGISTRY:-tetris}/tetris-game:frontend
-    build: 
+    image: ${ECR_REGISTRY:-tetris}/tetris-game:frontend-${IMAGE_TAG:-latest}
+    build:
       context: .
     ports:
       - "8080:80"
