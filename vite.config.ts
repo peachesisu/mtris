@@ -4,6 +4,8 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  // [Local Development Only] 
+  // Production reverse proxy is handled by Nginx (nginx.conf)
   server: {
     proxy: {
       '/api': {
