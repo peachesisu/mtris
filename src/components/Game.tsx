@@ -15,6 +15,7 @@ import Display from './Display';
 import StartButton from './StartButton';
 import NextPiece from './NextPiece';
 import Ranking from './Ranking';
+import ActivePlayers from './ActivePlayers';
 
 // 타이틀 이미지
 import titleImg from '../assets/MP-TETRIS-Title.png';
@@ -32,14 +33,21 @@ const Game: React.FC = () => {
     const [nickname, setNickname] = useState<string>('');
     const [isNicknameSet, setIsNicknameSet] = useState(false);
     const [gameMode, setGameMode] = useState<'MP' | 'Normal'>('MP');
+    const [activeSessions, setActiveSessions] = useState<{ [key: string]: any }>({});
 
     // Socket Connection
     React.useEffect(() => {
         // Connect to local backend (or configurable URL)
         const s = io();
         setSocket(s);
+
+        s.on('session_update', (sessions) => {
+            setActiveSessions(sessions);
+        });
+
         return () => {
             if (s) {
+                s.off('session_update');
                 s.disconnect();
             }
         };
@@ -549,8 +557,9 @@ const Game: React.FC = () => {
 
                 {/* 랭킹 */}
                 <aside className="game-ranking-panel">
-                    <div style={{ height: '20px' }} />
                     <Ranking />
+                    <div style={{ height: '20px' }} />
+                    <ActivePlayers sessions={activeSessions} currentNickname={nickname} />
                 </aside>
             </div>
             <div

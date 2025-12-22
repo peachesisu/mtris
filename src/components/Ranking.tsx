@@ -37,7 +37,7 @@ const Ranking: React.FC = () => {
         borderRadius: '10px',
         color: 'white',
         width: '400px',
-        height: '850px',
+        height: '630px',
         overflowY: 'auto',
         fontFamily: "'Orbitron', sans-serif",
     };
@@ -76,9 +76,9 @@ const Ranking: React.FC = () => {
 
     return (
         <div style={containerStyle}>
-            <div style={{ height: '20px' }}></div>
+            <div style={{ height: '10px' }}></div>
             <h1 style={{ margin: '0 0 10px 0', color: '#50e3e6', textAlign: 'center' }}>RANKING</h1>
-            <div style={{ height: '20px' }}></div>
+            <div style={{ height: '10px' }}></div>
             {loading ? (
                 <p>Loading...</p>
             ) : (
