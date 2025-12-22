@@ -10,6 +10,7 @@ interface PlayerParams {
   nickname: string;
   stage: any[][];
   score: number;
+  mode?: string;
 }
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD ?? 'Riswell';
@@ -194,8 +195,22 @@ const Admin: React.FC = () => {
             <div style={gridStyle}>
               {Object.entries(sessions).map(([id, player]) => (
                 <div key={id} style={cardStyle}>
-                  <h1 style={{ color: '#dfd924' }}>{player.nickname || 'Anonymous'}</h1>
-                  <div style={{ marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <h1 style={{ color: '#dfd924', margin: 0 }}>{player.nickname || 'Anonymous'}</h1>
+                    {player.mode && (
+                      <span style={{
+                        fontSize: '12px',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        background: player.mode === 'Normal' ? '#00ff00' : '#ff00ff',
+                        color: 'black',
+                        fontWeight: 'bold'
+                      }}>
+                        {player.mode}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', marginTop: '10px' }}>
                     <Display text={`Score: ${player.score}`} />
                     <button
                       onClick={() => {
