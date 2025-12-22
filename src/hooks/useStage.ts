@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createStage } from '../gameHelpers';
 
-export const useStage = (player: any, resetPlayer: () => void) => {
+export const useStage = (player: any, resetPlayer: () => void, gameMode: 'MP' | 'Normal' = 'MP') => {
     const [stage, setStage] = useState(createStage());
     const [rowsCleared, setRowsCleared] = useState(0);
     const [scoreDelta, setScoreDelta] = useState(0);
@@ -20,25 +20,26 @@ export const useStage = (player: any, resetPlayer: () => void) => {
                 const isFull = row.findIndex((cell: any) => cell.value === 0) === -1;
 
                 if (isFull) {
-                const rowScore = row.reduce(
-                    (sum: number, cell: any) => sum + (cell.num || 0),
-                    0
-                );
-
-                if (rowScore >=60) {
-                    currentScoreDelta += rowScore;
-                    rowsToClear.push(y);
-
-                    // 빈 줄 추가
-                    ack.unshift(
-                    Array.from({ length: newStage[0].length }, () => ({
-                        value: 0,
-                        status: 'clear',
-                        num: 0,
-                    }))
+                    const rowScore = row.reduce(
+                        (sum: number, cell: any) => sum + (cell.num || 0),
+                        0
                     );
-                    return ack;
-                }
+
+                    // Normal mode clears any full row. MP mode requires rowScore >= 60.
+                    if (gameMode === 'Normal' || rowScore >= 60) {
+                        currentScoreDelta += rowScore;
+                        rowsToClear.push(y);
+
+                        // 빈 줄 추가
+                        ack.unshift(
+                            Array.from({ length: newStage[0].length }, () => ({
+                                value: 0,
+                                status: 'clear',
+                                num: 0,
+                            }))
+                        );
+                        return ack;
+                    }
                 }
 
                 ack.push(row);
@@ -51,7 +52,7 @@ export const useStage = (player: any, resetPlayer: () => void) => {
             setClearedRows(rowsToClear);
 
             return sweptStage;
-            };
+        };
 
 
 

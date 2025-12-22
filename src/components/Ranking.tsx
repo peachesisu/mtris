@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 interface Rank {
     nickname: string;
     score: number;
+    mode: string;
 }
 
 const Ranking: React.FC = () => {
@@ -25,9 +26,6 @@ const Ranking: React.FC = () => {
 
     useEffect(() => {
         fetchRanks();
-        // Optional: Polling every 10 seconds due to "real-time" requirement?
-        // Or just reload on game over. Let's poll for now or just fetch once.
-        // User asked: "show top 20". Let's update intervally.
         const interval = setInterval(fetchRanks, 5000);
         return () => clearInterval(interval);
     }, []);
@@ -52,18 +50,29 @@ const Ranking: React.FC = () => {
     const thStyle: React.CSSProperties = {
         textAlign: 'left',
         borderBottom: '1px solid #555',
-        padding: '18px',
+        padding: '10px',
         color: '#dfd924', // Neon Yellow
-        fontSize: '20px',
+        fontSize: '18px',
     };
 
     const tdStyle: React.CSSProperties = {
-        padding: '5px',
+        padding: '10px 5px',
         borderBottom: '1px solid #222',
-        fontSize: '25px',
+        fontSize: '20px',
         fontWeight: 'bold',
         textAlign: 'center',
     };
+
+    const getModeStyle = (mode: string): React.CSSProperties => ({
+        fontSize: '10px',
+        padding: '2px 6px',
+        borderRadius: '4px',
+        marginLeft: '5px',
+        verticalAlign: 'middle',
+        background: mode === 'Normal' ? '#00ff00' : '#ff00ff',
+        color: 'black',
+        textTransform: 'uppercase'
+    });
 
     return (
         <div style={containerStyle}>
@@ -85,8 +94,11 @@ const Ranking: React.FC = () => {
                         {ranks.map((rank, index) => (
                             <tr key={index}>
                                 <td style={{ ...tdStyle, color: index < 3 ? '#ff00ff' : 'white' }}>{index + 1}</td>
-                                <td style={tdStyle}>{rank.nickname}</td>
-                                <td style={{ ...tdStyle, textAlign: 'right' }}>{rank.score}</td>
+                                <td style={{ ...tdStyle, textAlign: 'left', paddingLeft: '15px' }}>
+                                    {rank.nickname}
+                                    <span style={getModeStyle(rank.mode)}>{rank.mode}</span>
+                                </td>
+                                <td style={{ ...tdStyle, textAlign: 'right', color: '#50e3e6' }}>{rank.score.toLocaleString()}</td>
                             </tr>
                         ))}
                     </tbody>

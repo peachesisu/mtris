@@ -64,9 +64,10 @@ io.on('connection', (socket) => {
 
     // Score submission via Socket.IO
     socket.on('submit_score', (data) => {
-        const { nickname, score, secret } = data;
+        const { nickname, score, secret, mode } = data;
+        const gameMode = mode || 'MP'; // Default to MP for compatibility
 
-        // 1. Secret Key Validation (Optional but recommended for consistency)
+        // 1. Secret Key Validation
         if (!safeEqual(secret, process.env.RANKING_SECRET)) {
             console.warn(`[Socket] Unauthorized score submission attempt from ${socket.id}`);
             return;
@@ -79,7 +80,7 @@ io.on('connection', (socket) => {
         if (!cleanNickname || cleanNickname.length > 20) {
             return;
         }
-        if (!Number.isFinite(numericScore) || !Number.isInteger(numericScore) || numericScore < 0 || numericScore > 50000) {
+        if (!Number.isFinite(numericScore) || !Number.isInteger(numericScore) || numericScore < 0 || numericScore > 1000000) {
             return;
         }
 
@@ -90,7 +91,6 @@ io.on('connection', (socket) => {
             return;
         }
 
-        // Allow some buffer (e.g., 20% or a small fixed value) for scores reported right before game over
         const reportedScore = Number(session.score) || 0;
         if (numericScore > reportedScore + 5000) {
             console.warn(`[Socket] Score anomaly detected for ${cleanNickname}: reported=${reportedScore}, submitted=${numericScore}`);
@@ -98,22 +98,22 @@ io.on('connection', (socket) => {
         }
 
         // 4. Update Database
-        db.get("SELECT score FROM ranks WHERE nickname = ?", [cleanNickname], (err, row) => {
+        db.get("SELECT score FROM ranks WHERE nickname = ? AND mode = ?", [cleanNickname, gameMode], (err, row) => {
             if (err) return;
 
             if (row) {
                 if (numericScore > row.score) {
-                    db.run("UPDATE ranks SET score = ? WHERE nickname = ?", [numericScore, cleanNickname], function (err) {
+                    db.run("UPDATE ranks SET score = ? WHERE nickname = ? AND mode = ?", [numericScore, cleanNickname, gameMode], function (err) {
                         if (err) return;
-                        socket.emit('score_result', { status: 'success', message: "Score updated" });
+                        socket.emit('score_result', { status: 'success', message: `${gameMode} Score updated!` });
                     });
                 } else {
-                    socket.emit('score_result', { status: 'ignored', message: "Existing score is higher" });
+                    socket.emit('score_result', { status: 'ignored', message: `Existing ${gameMode} score is higher` });
                 }
             } else {
-                db.run("INSERT INTO ranks (nickname, score) VALUES (?, ?)", [cleanNickname, numericScore], function (err) {
+                db.run("INSERT INTO ranks (nickname, score, mode) VALUES (?, ?, ?)", [cleanNickname, numericScore, gameMode], function (err) {
                     if (err) return;
-                    socket.emit('score_result', { status: 'success', message: "New rank added" });
+                    socket.emit('score_result', { status: 'success', message: `New ${gameMode} rank added!` });
                 });
             }
         });
@@ -131,19 +131,52 @@ const db = new sqlite3.Database(dbPath, (err) => {
     }
 });
 
-// Create table if not exists
+// Create table if not exists with mode support
 db.serialize(() => {
-    db.run(`
-            CREATE TABLE IF NOT EXISTS ranks (
-                nickname TEXT PRIMARY KEY,
-                score INTEGER
-            )
-        `);
+    // Check if table exists and has 'mode' column
+    db.all("PRAGMA table_info(ranks)", (err, columns) => {
+        if (err) {
+            console.error("Error checking table info", err);
+            return;
+        }
+
+        if (columns.length === 0) {
+            // Table doesn't exist at all
+            db.run(`
+                CREATE TABLE ranks (
+                    nickname TEXT,
+                    mode TEXT DEFAULT 'MP',
+                    score INTEGER,
+                    PRIMARY KEY (nickname, mode)
+                )
+            `);
+            console.log("Created ranks table with mode support.");
+        } else {
+            const hasMode = columns.some(col => col.name === 'mode');
+            if (!hasMode) {
+                console.log("Migrating database: Adding 'mode' column and updating Primary Key...");
+                db.serialize(() => {
+                    db.run("ALTER TABLE ranks RENAME TO ranks_old");
+                    db.run(`
+                        CREATE TABLE ranks (
+                            nickname TEXT,
+                            mode TEXT DEFAULT 'MP',
+                            score INTEGER,
+                            PRIMARY KEY (nickname, mode)
+                        )
+                    `);
+                    db.run("INSERT INTO ranks (nickname, score, mode) SELECT nickname, score, 'MP' FROM ranks_old");
+                    db.run("DROP TABLE ranks_old");
+                    console.log("Database migration completed.");
+                });
+            }
+        }
+    });
 });
 
 // GET /api/ranks - Get Top 20
 app.get('/api/ranks', (req, res) => {
-    const sql = `SELECT nickname, score FROM ranks ORDER BY score DESC`;
+    const sql = `SELECT nickname, score, mode FROM ranks ORDER BY score DESC LIMIT 50`;
     db.all(sql, [], (err, rows) => {
         if (err) {
             res.status(400).json({ error: err.message });

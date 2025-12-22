@@ -31,6 +31,7 @@ const Game: React.FC = () => {
     // Initial Nickname State
     const [nickname, setNickname] = useState<string>('');
     const [isNicknameSet, setIsNicknameSet] = useState(false);
+    const [gameMode, setGameMode] = useState<'MP' | 'Normal'>('MP');
 
     // Socket Connection
     React.useEffect(() => {
@@ -75,7 +76,7 @@ const Game: React.FC = () => {
      * - scoreDelta: 이번 프레임에서 증가할 점수량(줄 수 기반)
      * - clearedRows: 이번에 지워진 줄의 인덱스 목록
      */
-    const [stage, setStage, rowsCleared, scoreDelta, clearedRows] = useStage(player, resetPlayer);
+    const [stage, setStage, rowsCleared, scoreDelta, clearedRows] = useStage(player, resetPlayer, gameMode);
 
     const playerRef = React.useRef(player);
     React.useEffect(() => {
@@ -106,7 +107,8 @@ const Game: React.FC = () => {
             socket.emit('update_state', {
                 nickname,
                 stage,
-                score
+                score,
+                mode: gameMode
             });
         }
     }, [stage, score, nickname, isNicknameSet, socket]);
@@ -354,32 +356,70 @@ const Game: React.FC = () => {
                     border: '1px solid rgba(255,255,255,0.2)', boxShadow: '0 0 20px rgba(0,0,0,0.5)',
                     display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center'
                 }}>
-                    <h2>ENTER NICKNAME</h2>
+                    <h2>ENTER Game</h2>
                     <form onSubmit={(e) => {
                         e.preventDefault();
                         if (nickname.trim()) setIsNicknameSet(true);
                     }}>
-                        <input
-                            type="text"
-                            value={nickname}
-                            onChange={(e) => setNickname(e.target.value)}
-                            placeholder="Nickname"
-                            maxLength={10}
-                            style={{
-                                padding: '15px', fontSize: '20px', textAlign: 'center',
-                                background: '#333', color: 'white', border: '1px solid #555', borderRadius: '5px',
-                                fontFamily: "'Orbitron', sans-serif"
-                            }}
-                            autoFocus
-                        />
-                        <div style={{ height: '20px' }}></div>
-                        <button type="submit" style={{
-                            padding: '15px 40px', fontSize: '20px', cursor: 'pointer',
-                            background: '#dfd924', color: 'black', fontWeight: 'bold', border: 'none', borderRadius: '5px',
-                            fontFamily: "'Orbitron', sans-serif"
+                        <div style={{
+                            display: 'flex', flexDirection: 'column', alignItems: 'center'
                         }}>
-                            START
-                        </button>
+                            <input
+                                type="text"
+                                value={nickname}
+                                onChange={(e) => setNickname(e.target.value)}
+                                placeholder="Nickname"
+                                maxLength={10}
+                                style={{
+                                    padding: '15px', fontSize: '20px', textAlign: 'center',
+                                    background: '#333', color: 'white', border: '1px solid #555', borderRadius: '5px',
+                                    fontFamily: "'Orbitron', sans-serif",
+                                    width: 400,
+                                }}
+                                autoFocus
+                            />
+                            <div style={{ height: '20px' }}></div>
+                            <div style={{ height: '20px' }}></div>
+
+                            <div style={{ display: 'flex', gap: '15px', marginBottom: '10px' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setGameMode('MP')}
+                                    style={{
+                                        padding: '10px 20px', fontSize: '20px', cursor: 'pointer',
+                                        background: gameMode === 'MP' ? '#dfd924' : '#333',
+                                        color: gameMode === 'MP' ? 'black' : 'white',
+                                        fontWeight: 'bold', border: '1px solid #dfd924', borderRadius: '5px',
+                                        fontFamily: "'Orbitron', sans-serif", transition: '0.3s'
+                                    }}
+                                >
+                                    MP MODE (60)
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setGameMode('Normal')}
+                                    style={{
+                                        padding: '10px 20px', fontSize: '20px', cursor: 'pointer',
+                                        background: gameMode === 'Normal' ? '#00ff00' : '#333',
+                                        color: gameMode === 'Normal' ? 'black' : 'white',
+                                        fontWeight: 'bold', border: '1px solid #00ff00', borderRadius: '5px',
+                                        fontFamily: "'Orbitron', sans-serif", transition: '0.3s'
+                                    }}
+                                >
+                                    NORMAL MODE
+                                </button>
+                            </div>
+
+                            <div style={{ height: '10px' }}></div>
+                            <button type="submit" style={{
+                                padding: '15px 40px', fontSize: '20px', cursor: 'pointer',
+                                background: '#dfd924', color: 'black', fontWeight: 'bold', border: 'none', borderRadius: '5px',
+                                fontFamily: "'Orbitron', sans-serif"
+                            }}>
+                                START
+                            </button>
+
+                        </div>
                     </form>
                 </div>
             </div>
@@ -458,6 +498,7 @@ const Game: React.FC = () => {
                                             socket.emit("submit_score", {
                                                 nickname,
                                                 score,
+                                                mode: gameMode,
                                                 secret: import.meta.env.VITE_RANKING_SECRET
                                             });
 
