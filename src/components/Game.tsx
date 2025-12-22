@@ -494,6 +494,23 @@ const Game: React.FC = () => {
                     <Ranking />
                 </aside>
             </div>
+                        <div
+  style={{
+    position: 'fixed',
+    right: '16px',
+    bottom: '12px',
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: '15px',
+    fontFamily: "'Orbitron', sans-serif",
+    zIndex: 9999,
+    userSelect: 'none',
+    pointerEvents: 'none',
+  }}
+>
+  © 2025 MP TETRIS. All rights reserved. / 
+  개발자 : 32기 김유경, 25기 김소희
+</div>
+
         </div>
     );
 };
