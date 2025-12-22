@@ -38,15 +38,20 @@ const ActivePlayers: React.FC<Props> = ({ sessions, currentNickname }) => {
         alignItems: 'center',
     });
 
-    const tagStyle = (mode?: string): React.CSSProperties => ({
+    const tagStyle = (mode?: string, type: 'mode' | 'score' = 'mode'): React.CSSProperties => ({
         fontSize: '14px',
-        padding: '2px 6px',
+        padding: '2px 8px',
         borderRadius: '4px',
         fontWeight: 'bold',
-        color: 'black',
-        background: mode === 'Normal' ? '#00ff00' : '#ff00ff', // Normal: Green, MP: Pink
-        marginLeft: '10px',
+        color: type === 'mode' ? 'black' : '#fff',
+        background: type === 'mode'
+            ? (mode === 'Normal' ? '#00ff00' : '#ff00ff') // Normal: Green, MP: Pink
+            : 'rgba(255, 255, 255, 0.1)', // Score background
+        marginLeft: type === 'mode' ? '10px' : '5px',
         textTransform: 'uppercase',
+        minWidth: type === 'score' ? '100px' : 'auto',
+        textAlign: type === 'score' ? 'right' : 'center',
+        border: type === 'score' ? '1px solid rgba(255,255,255,0.2)' : 'none',
     });
 
     return (
@@ -74,9 +79,14 @@ const ActivePlayers: React.FC<Props> = ({ sessions, currentNickname }) => {
                         }}>
                             {p.nickname || 'Anonymous'}
                         </span>
-                        <span style={tagStyle(p.mode)}>
-                            {p.mode || 'MP'}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <span style={tagStyle(p.mode, 'score')}>
+                                {p.score?.toLocaleString() || 0}
+                            </span>
+                            <span style={tagStyle(p.mode, 'mode')}>
+                                {p.mode || 'MP'}
+                            </span>
+                        </div>
                     </li>
                 ))}
                 {players.length === 0 && (
