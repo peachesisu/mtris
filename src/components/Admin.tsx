@@ -47,15 +47,19 @@ const Admin: React.FC = () => {
   const containerStyle: React.CSSProperties = {
     padding: '20px',
     color: 'white',
-    minHeight: '100vh',
+    // minHeight: '100vh',
     background: 'black',
     fontFamily: "'Orbitron', sans-serif",
+    // width: '100%',
+    height: '100%',
+    boxSizing: 'border-box',
+    overflowY: 'auto',
   };
 
   const gridStyle: React.CSSProperties = {
     display: 'grid',
-    gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
-    gap: '40px',
+    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+    gap: '20px',
     alignItems: 'start',
 
   };
@@ -70,6 +74,19 @@ const Admin: React.FC = () => {
     alignItems: 'center',
   };
 
+  const boardWrapStyle: React.CSSProperties = {
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'center',
+    height: 850,
+  };
+
+  const boardViewportStyle: React.CSSProperties = {
+    height: 520,            
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  };
 
 
   // ✅ 잠금 화면 UI
@@ -174,12 +191,14 @@ const Admin: React.FC = () => {
               <div style={{ marginBottom: '10px' }}>
                 <Display text={`Score: ${player.score}`} />
               </div>
-              <div style={{ transform: 'scale(1)', transformOrigin: 'top center', marginBottom: '-250px' }}>
-                {player.stage ? (
-                  <Board stage={player.stage} clearedRows={[]} />
-                ) : (
-                  <div>No Board Data</div>
-                )}
+              <div style={boardWrapStyle}>
+                <div style={boardViewportStyle}>
+                  {player.stage ? (
+                    <Board stage={player.stage} clearedRows={[]} />
+                  ) : (
+                    <div>No Board Data</div>
+                  )}
+                </div>
               </div>
             </div>
           ))}

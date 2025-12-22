@@ -1,0 +1,24 @@
+# docker-compose.local.yml
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./server/ranks.db:/app/ranks.db
+    restart: unless-stopped
+    mem_limit: 512m
+
+  frontend:
+    build:
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    mem_limit: 128m
