@@ -200,6 +200,7 @@ const Admin: React.FC = () => {
                     <button
                       onClick={() => {
                         if (socket) {
+                          console.log(`Emitting admin_boom for targetId: ${id}`);
                           socket.emit('admin_boom', id);
                         }
                       }}

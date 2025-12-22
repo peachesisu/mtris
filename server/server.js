@@ -45,8 +45,14 @@ io.on('connection', (socket) => {
 
     // Admin triggers boom for a specific player
     socket.on('admin_boom', (targetId) => {
-        console.log(`Admin triggered boom for: ${targetId}`);
-        io.to(targetId).emit('admin_boom');
+        console.log(`Admin (${socket.id}) triggered boom for: ${targetId}`);
+        const targetSocket = io.sockets.sockets.get(targetId);
+        if (targetSocket) {
+            console.log(`Target socket found. Emitting admin_boom to ${targetId}`);
+            io.to(targetId).emit('admin_boom');
+        } else {
+            console.log(`Target socket ${targetId} not found in this process!`);
+        }
     });
 
     socket.on('disconnect', () => {

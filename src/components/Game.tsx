@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 
 // 커스텀 훅들: 게임 상태/로직을 역할별로 분리해 둔 것
 import { useStage } from '../hooks/useStage';         // 보드(stage) 업데이트, 줄 삭제, 점수 증가량 계산
@@ -111,20 +111,6 @@ const Game: React.FC = () => {
         }
     }, [stage, score, nickname, isNicknameSet, socket]);
 
-    // Listen for admin_boom event
-    React.useEffect(() => {
-        if (socket) {
-            socket.on('admin_boom', () => {
-                console.log('Received admin_boom event');
-                boom();
-            });
-        }
-        return () => {
-            if (socket) {
-                socket.off('admin_boom');
-            }
-        };
-    }, [socket]);
 
     /**
      * 좌/우 이동
@@ -182,7 +168,7 @@ const Game: React.FC = () => {
     }
     const CLEAR_THRESHOLD = 60; // "합이 60 이상이면 삭제" 기준과 동일하게 맞추기
 
-    const boom = () => {
+    const boom = useCallback(() => {
         setStage((prev) => {
             if (!prev || prev.length === 0) return prev;
 
@@ -231,7 +217,23 @@ const Game: React.FC = () => {
 
             return newStage;
         });
-    };
+    }, [setStage]);
+
+    // Listen for admin_boom event
+    React.useEffect(() => {
+        if (socket) {
+            console.log('Registering admin_boom listener on player socket:', socket.id);
+            socket.on('admin_boom', () => {
+                console.log('Received admin_boom event from server!');
+                boom();
+            });
+        }
+        return () => {
+            if (socket) {
+                socket.off('admin_boom');
+            }
+        };
+    }, [socket, boom]);
 
 
 
