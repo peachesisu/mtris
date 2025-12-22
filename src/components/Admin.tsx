@@ -53,22 +53,23 @@ const Admin: React.FC = () => {
   };
 
   const gridStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
-    gap: '40px',
-    alignItems: 'start',
-
+  display: 'grid',
+  gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', // ✅ 5열 고정
+  gap: '16px',
+  alignItems: 'start',
   };
 
-  const cardStyle: React.CSSProperties = {
-    border: '1px solid #333',
-    padding: '10px',
-    borderRadius: '10px',
-    background: 'rgba(20, 20, 20, 0.9)',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-  };
+const cardStyle: React.CSSProperties = {
+  border: '1px solid #333',
+  padding: '12px',
+  borderRadius: '12px',
+  background: 'rgba(20, 20, 20, 0.9)',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  minWidth: 0, // ✅ grid에서 폭 찌그러짐 방지
+};
+
 
 
 
