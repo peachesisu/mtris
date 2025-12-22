@@ -454,20 +454,17 @@ const Game: React.FC = () => {
                                     onSubmit={(e) => {
                                         e.preventDefault();
                                         // Use the session nickname for submission too
-                                        if (nickname) {
-                                            fetch('/api/ranks', {
-                                                method: 'POST',
-                                                headers: {
-                                                    'Content-Type': 'application/json',
-                                                    'x-ranking-secret': import.meta.env.VITE_RANKING_SECRET
-                                                },
-                                                body: JSON.stringify({ nickname, score }),
-                                            })
-                                                .then(res => res.json())
-                                                .then(() => {
-                                                    alert('Score Submitted!');
-                                                })
-                                                .catch(err => console.error(err));
+                                        if (socket && nickname) {
+                                            socket.emit("submit_score", {
+                                                nickname,
+                                                score,
+                                                secret: import.meta.env.VITE_RANKING_SECRET
+                                            });
+
+                                            // Listen for result once
+                                            socket.once('score_result', (res) => {
+                                                alert(res.message);
+                                            });
                                         }
                                     }}
                                     style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}

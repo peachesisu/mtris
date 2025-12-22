@@ -42,7 +42,9 @@ jobs:
 
     - name: Build and Push Frontend
       run: |
-        docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:frontend-${{ github.sha }} .
+        docker build \
+          --build-arg VITE_RANKING_SECRET=${{ secrets.RANKING_SECRET }} \
+          -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:frontend-${{ github.sha }} .
         docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:frontend-${{ github.sha }}
 
     - name: Prepare directory on EC2
@@ -74,11 +76,13 @@ jobs:
 
           ECR_REGISTRY="${{ steps.login-ecr.outputs.registry }}"
           IMAGE_TAG="${{ github.sha }}"
+          RANKING_SECRET="${{ secrets.RANKING_SECRET }}"
 
           echo "ECR_REGISTRY=[$ECR_REGISTRY]"
           echo "IMAGE_TAG=[$IMAGE_TAG]"
           test -n "$ECR_REGISTRY"
           test -n "$IMAGE_TAG"
+          test -n "$RANKING_SECRET"
 
           aws --version
           aws sts get-caller-identity
@@ -87,7 +91,7 @@ jobs:
             | docker login --username AWS --password-stdin "$ECR_REGISTRY"
 
           cd ~/tetris
-          export ECR_REGISTRY IMAGE_TAG
+          export ECR_REGISTRY IMAGE_TAG RANKING_SECRET
 
           docker compose pull
           docker compose up -d --remove-orphans

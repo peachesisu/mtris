@@ -11,6 +11,7 @@ services:
     mem_limit: 512m
     environment:
       - NODE_OPTIONS=--max-old-space-size=256
+      - RANKING_SECRET=${RANKING_SECRET}
 
     logging:
       driver: "json-file"

@@ -61,6 +61,63 @@ io.on('connection', (socket) => {
         delete activeSessions[socket.id];
         io.emit('session_update', activeSessions);
     });
+
+    // Score submission via Socket.IO
+    socket.on('submit_score', (data) => {
+        const { nickname, score, secret } = data;
+
+        // 1. Secret Key Validation (Optional but recommended for consistency)
+        if (!safeEqual(secret, process.env.RANKING_SECRET)) {
+            console.warn(`[Socket] Unauthorized score submission attempt from ${socket.id}`);
+            return;
+        }
+
+        // 2. Data Validation
+        const cleanNickname = (nickname ?? "").toString().trim();
+        const numericScore = Number(score);
+
+        if (!cleanNickname || cleanNickname.length > 20) {
+            return;
+        }
+        if (!Number.isFinite(numericScore) || !Number.isInteger(numericScore) || numericScore < 0 || numericScore > 50000) {
+            return;
+        }
+
+        // 3. State-based Validation (Check against last reported score in activeSessions)
+        const session = activeSessions[socket.id];
+        if (!session) {
+            console.warn(`[Socket] No active session found for ${socket.id} during score submission`);
+            return;
+        }
+
+        // Allow some buffer (e.g., 20% or a small fixed value) for scores reported right before game over
+        const reportedScore = Number(session.score) || 0;
+        if (numericScore > reportedScore + 5000) {
+            console.warn(`[Socket] Score anomaly detected for ${cleanNickname}: reported=${reportedScore}, submitted=${numericScore}`);
+            return;
+        }
+
+        // 4. Update Database
+        db.get("SELECT score FROM ranks WHERE nickname = ?", [cleanNickname], (err, row) => {
+            if (err) return;
+
+            if (row) {
+                if (numericScore > row.score) {
+                    db.run("UPDATE ranks SET score = ? WHERE nickname = ?", [numericScore, cleanNickname], function (err) {
+                        if (err) return;
+                        socket.emit('score_result', { status: 'success', message: "Score updated" });
+                    });
+                } else {
+                    socket.emit('score_result', { status: 'ignored', message: "Existing score is higher" });
+                }
+            } else {
+                db.run("INSERT INTO ranks (nickname, score) VALUES (?, ?)", [cleanNickname, numericScore], function (err) {
+                    if (err) return;
+                    socket.emit('score_result', { status: 'success', message: "New rank added" });
+                });
+            }
+        });
+    });
 });
 
 // Database Setup
@@ -99,53 +156,53 @@ app.get('/api/ranks', (req, res) => {
 });
 
 // POST /api/ranks - Upsert Score
+const crypto = require("crypto");
+
+function safeEqual(a, b) {
+    const ab = Buffer.from(a || "");
+    const bb = Buffer.from(b || "");
+    if (ab.length !== bb.length) return false;
+    return crypto.timingSafeEqual(ab, bb);
+}
+
 app.post('/api/ranks', (req, res) => {
-    const { nickname, score } = req.body;
-    const clientSecret = req.headers['x-ranking-secret'];
+    const clientSecret = req.get('x-ranking-secret');
 
-    if (clientSecret !== process.env.RANKING_SECRET) {
-        res.status(403).json({ error: "Unauthorized: Invalid or missing secret key" });
-        return;
+    if (!safeEqual(clientSecret, process.env.RANKING_SECRET)) {
+        return res.status(403).json({ error: "Unauthorized" });
     }
 
-    if (!nickname || score === undefined) {
-        res.status(400).json({ error: "Nickname and score are required" });
-        return;
+    const nickname = (req.body.nickname ?? "").toString().trim();
+    const score = Number(req.body.score);
+
+    if (!nickname || nickname.length > 20) {
+        return res.status(400).json({ error: "Invalid nickname" });
+    }
+    if (!Number.isFinite(score) || !Number.isInteger(score) || score < 0 || score > 50000) {
+        return res.status(400).json({ error: "Invalid score" });
     }
 
-    // Check if user exists
     db.get("SELECT score FROM ranks WHERE nickname = ?", [nickname], (err, row) => {
-        if (err) {
-            res.status(400).json({ error: err.message });
-            return;
-        }
+        if (err) return res.status(400).json({ error: err.message });
 
         if (row) {
-            // User exists, update if new score is higher
             if (score > row.score) {
                 db.run("UPDATE ranks SET score = ? WHERE nickname = ?", [score, nickname], function (err) {
-                    if (err) {
-                        res.status(400).json({ error: err.message });
-                        return;
-                    }
-                    res.json({ message: "Score updated", nickname, score });
+                    if (err) return res.status(400).json({ error: err.message });
+                    return res.json({ message: "Score updated", nickname, score });
                 });
             } else {
-                // New score is lower or equal, do nothing
-                res.json({ message: "Score not updated (existing score is higher or equal)", nickname, score: row.score });
+                return res.json({ message: "Score not updated", nickname, score: row.score });
             }
         } else {
-            // User does not exist, insert
             db.run("INSERT INTO ranks (nickname, score) VALUES (?, ?)", [nickname, score], function (err) {
-                if (err) {
-                    res.status(400).json({ error: err.message });
-                    return;
-                }
-                res.json({ message: "New rank added", nickname, score });
+                if (err) return res.status(400).json({ error: err.message });
+                return res.json({ message: "New rank added", nickname, score });
             });
         }
     });
 });
+
 
 server.listen(port, () => {
     console.log(`Server running on port ${port}`);

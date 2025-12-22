@@ -7,6 +7,9 @@ COPY package*.json ./
 # Install dependencies (using legacy-peer-deps based on project history)
 RUN npm install --legacy-peer-deps
 
+ARG VITE_RANKING_SECRET
+ENV VITE_RANKING_SECRET=$VITE_RANKING_SECRET
+
 COPY . .
 RUN npm run build
 
