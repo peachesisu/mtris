@@ -10,9 +10,8 @@ export const useGameStatus = (rowsCleared: number, scoreDelta: number) => {
             // Add the sum of numbers
             setScore((prev) => prev + scoreDelta);
             setRows((prev) => prev + rowsCleared);
-            setLevel((prev) => prev + rowsCleared);
         }
-    }, [scoreDelta, rowsCleared, level]);
+    }, [scoreDelta, rowsCleared]);
 
     useEffect(() => {
         // simple level up for every 10 rows
