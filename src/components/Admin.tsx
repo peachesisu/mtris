@@ -54,8 +54,10 @@ const Admin: React.FC = () => {
 
   const gridStyle: React.CSSProperties = {
     display: 'grid',
-    gridTemplateColumns: 'repeat(2, 1fr)',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
     gap: '40px',
+    alignItems: 'start',
+
   };
 
   const cardStyle: React.CSSProperties = {

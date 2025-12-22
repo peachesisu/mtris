@@ -19,3 +19,5 @@ kyeongbuk science highschool - math tetris (2025, 32nd)
 
 ### 관전모드 관리자 비번
 Riswell
+
+### 관리자모드 권한 추후 업데이트 예정
