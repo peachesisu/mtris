@@ -1,5 +1,3 @@
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "1993"; // 원하는 비번
-
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
@@ -30,39 +28,12 @@ let activeSessions = {}; // socketId -> { nickname, board, score }
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
 
-    // ✅ 기본값: 이 소켓은 관리자 아님
-    socket.data.isAdmin = false;
-
-    // ✅ 관리자 인증 이벤트
-    socket.on('admin_auth', ({ password }) => {
-        if (password === ADMIN_PASSWORD) {
-            socket.data.isAdmin = true;
-            socket.emit('admin_auth_ok');
-
-            // 인증 성공한 관리자에게 최신 세션 보내기
-            socket.emit('session_update', activeSessions);
-        } else {
-            socket.emit('admin_auth_fail');
-        }
-    });
-
     // Player joins or updates state
     socket.on('update_state', (data) => {
         // data: { nickname, stage, score }
         activeSessions[socket.id] = data;
-
         // Broadcast to admins (or everyone for simplicity in this demo)
         io.emit('session_update', activeSessions);
-    });
-
-    // ✅ 관리자 명령: 특정 플레이어에게 boom 보내기
-    socket.on('admin_boom', ({ targetId }) => {
-        // 관리자 아니면 무시
-        if (!socket.data.isAdmin) return;
-        if (!targetId) return;
-
-        // targetId = 플레이어 socket.id
-        io.to(targetId).emit('boom');
     });
 
     socket.on('disconnect', () => {
@@ -71,7 +42,6 @@ io.on('connection', (socket) => {
         io.emit('session_update', activeSessions);
     });
 });
-
 
 // Database Setup
 // Use a file-based DB. In Docker, we should mount a volume to persist this.
@@ -154,4 +124,3 @@ app.post('/api/ranks', (req, res) => {
 server.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
-

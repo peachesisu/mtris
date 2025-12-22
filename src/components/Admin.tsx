@@ -1,33 +1,56 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import React, { useEffect, useState } from 'react';
+import { io } from 'socket.io-client';
 import Board from './Board';
 import Display from './Display';
 import Ranking from './Ranking';
 
+// Define the shape of data received from server
 interface PlayerParams {
   nickname: string;
   stage: any[][];
   score: number;
 }
 
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD ?? 'Riswell'; 
+// .env에 VITE_ADMIN_PASSWORD=xxxx 넣으면 그걸 사용
+// 없으면 기본값 '1234' (원하면 바꾸세요)
+
 const Admin: React.FC = () => {
   const [sessions, setSessions] = useState<{ [key: string]: PlayerParams }>({});
-  const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  // ✅ 비번 관련 state
   const [unlocked, setUnlocked] = useState<boolean>(() => {
     return sessionStorage.getItem('admin_ok') === '1';
   });
   const [pw, setPw] = useState('');
 
-  const socketRef = useRef<Socket | null>(null);
+  // ✅ 잠금 해제 후에만 소켓 연결
+  useEffect(() => {
+    if (!unlocked) return;
 
-  const containerStyle: React.CSSProperties = useMemo(() => ({
+    const socket = io();
+
+    socket.on('connect', () => {
+      console.log('Connected to admin socket');
+    });
+
+    socket.on('session_update', (data) => {
+      console.log('Session update:', data);
+      setSessions(data);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [unlocked]);
+
+  const containerStyle: React.CSSProperties = {
     padding: '20px',
     color: 'white',
     minHeight: '100vh',
     background: 'black',
     fontFamily: "'Orbitron', sans-serif",
-  }), []);
+  };
 
   const gridStyle: React.CSSProperties = {
     display: 'grid',
@@ -35,7 +58,7 @@ const Admin: React.FC = () => {
     gap: '40px',
   };
 
-  const cardStyleBase: React.CSSProperties = {
+  const cardStyle: React.CSSProperties = {
     border: '1px solid #333',
     padding: '10px',
     borderRadius: '10px',
@@ -43,77 +66,11 @@ const Admin: React.FC = () => {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    cursor: 'pointer',
   };
 
-  // ✅ 소켓 연결 (한 번만)
-  useEffect(() => {
-    const socket = io('http://localhost:3000');
-    socketRef.current = socket;
 
-    socket.on('connect', () => {
-      console.log('Admin connected:', socket.id);
 
-      // 이미 unlocked 상태면 자동 인증 시도(새로고침 대비)
-      if (sessionStorage.getItem('admin_ok') === '1') {
-        const saved = sessionStorage.getItem('admin_pw') || '';
-        if (saved) socket.emit('admin_auth', { password: saved });
-      }
-    });
-
-    socket.on('admin_auth_ok', () => {
-      setUnlocked(true);
-      sessionStorage.setItem('admin_ok', '1');
-    });
-
-    socket.on('admin_auth_fail', () => {
-      alert('Wrong password');
-      sessionStorage.removeItem('admin_ok');
-      sessionStorage.removeItem('admin_pw');
-      setUnlocked(false);
-      setSessions({});
-      setSelectedId(null);
-    });
-
-    socket.on('session_update', (data) => {
-      setSessions(data || {});
-      // 선택된 플레이어가 나갔으면 선택 해제
-      if (selectedId && data && !data[selectedId]) setSelectedId(null);
-    });
-
-    return () => {
-      socket.disconnect();
-      socketRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // ✅ 관리자 R키로 BOOM
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (!unlocked) return;
-      if (!selectedId) return;
-
-      if (e.key === 'r' || e.key === 'R') {
-        e.preventDefault();
-        socketRef.current?.emit('admin_boom', { targetId: selectedId });
-      }
-    };
-
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [unlocked, selectedId]);
-
-  // ✅ 로그아웃
-  const logout = () => {
-    sessionStorage.removeItem('admin_ok');
-    sessionStorage.removeItem('admin_pw');
-    setUnlocked(false);
-    setSessions({});
-    setSelectedId(null);
-  };
-
-  // ✅ 잠금 화면
+  // ✅ 잠금 화면 UI
   if (!unlocked) {
     return (
       <div style={containerStyle}>
@@ -122,15 +79,16 @@ const Admin: React.FC = () => {
           <div style={{ marginBottom: '10px', fontSize: 18 }}>
             Admin Password
           </div>
-
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              const socket = socketRef.current;
-              if (!socket) return;
-
-              sessionStorage.setItem('admin_pw', pw); // 새로고침 대비
-              socket.emit('admin_auth', { password: pw });
+              if (pw === ADMIN_PASSWORD) {
+                sessionStorage.setItem('admin_ok', '1');
+                setUnlocked(true);
+              } else {
+                alert('Wrong password');
+                setPw('');
+              }
             }}
           >
             <input
@@ -173,15 +131,19 @@ const Admin: React.FC = () => {
     );
   }
 
+  // ✅ (선택) 로그아웃 버튼
+  const logout = () => {
+    sessionStorage.removeItem('admin_ok');
+    setUnlocked(false);
+    setSessions({});
+  };
+
   return (
     <>
       <div style={{ width: '100px' }} />
       <div style={containerStyle}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <h1 style={{ margin: 0 }}>SPECTATOR MODE</h1>
-          <div style={{ marginLeft: 12, opacity: 0.8 }}>
-            (카드 선택 후 R키 = BOOM)
-          </div>
           <button
             onClick={logout}
             style={{
@@ -204,61 +166,25 @@ const Admin: React.FC = () => {
         </div>
 
         <div style={gridStyle}>
-          {Object.entries(sessions).map(([id, player]) => {
-            const selected = id === selectedId;
-            const cardStyle: React.CSSProperties = {
-              ...cardStyleBase,
-              border: selected ? '2px solid #dfd924' : '1px solid #333',
-              boxShadow: selected ? '0 0 16px rgba(223,217,36,0.25)' : undefined,
-            };
-
-            return (
-              <div
-                key={id}
-                style={cardStyle}
-                onClick={() => setSelectedId(id)}
-                title={selected ? 'Selected' : 'Click to select'}
-              >
-                <h1 style={{ color: '#dfd924' }}>{player.nickname || 'Anonymous'}</h1>
-
-                <div style={{ marginBottom: '10px' }}>
-                  <Display text={`Score: ${player.score}`} />
-                </div>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedId(id);
-                    socketRef.current?.emit('admin_boom', { targetId: id });
-                  }}
-                  style={{
-                    marginBottom: 12,
-                    padding: '10px 14px',
-                    borderRadius: 8,
-                    border: 'none',
-                    background: '#dfd924',
-                    color: 'black',
-                    cursor: 'pointer',
-                    fontFamily: "'Orbitron', sans-serif",
-                    fontWeight: 'bold'
-                  }}
-                >
-                  BOOM (R)
-                </button>
-
-                <div style={{ transform: 'scale(1)', transformOrigin: 'top center', marginBottom: '-250px' }}>
-                  {player.stage ? (
-                    <Board stage={player.stage} clearedRows={[]} />
-                  ) : (
-                    <div>No Board Data</div>
-                  )}
-                </div>
+          {Object.entries(sessions).map(([id, player]) => (
+            <div key={id} style={cardStyle}>
+              <h1 style={{ color: '#dfd924' }}>{player.nickname || 'Anonymous'}</h1>
+              <div style={{ marginBottom: '10px' }}>
+                <Display text={`Score: ${player.score}`} />
               </div>
-            );
-          })}
+              <div style={{ transform: 'scale(1)', transformOrigin: 'top center', marginBottom: '-250px' }}>
+                {player.stage ? (
+                  <Board stage={player.stage} clearedRows={[]} />
+                ) : (
+                  <div>No Board Data</div>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
+      {/* 랭킹 */}
       <aside className="game-ranking-panel">
         <div style={{ height: '20px' }} />
         <Ranking />

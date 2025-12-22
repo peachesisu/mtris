@@ -33,17 +33,14 @@ const Game: React.FC = () => {
 
     // Socket Connection
     React.useEffect(() => {
-        const sock = socketRef.current;
-        if (!sock) return;
-
-        const onBoom = () => boom();
-        sock.on('boom', onBoom);
-
+        // Connect to local backend (or configurable URL)
+        socketRef.current = io();
         return () => {
-            sock.off('boom', onBoom);
+            if (socketRef.current) {
+                socketRef.current.disconnect();
+            }
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, []);
+    }, []);
 
     /**
      * dropTime: 블록이 자동으로 떨어지는 속도(ms)
@@ -294,21 +291,6 @@ const Game: React.FC = () => {
         drop();
     };
 
-    React.useEffect(() => {
-    const sock = socketRef.current;
-    if (!sock) return;
-
-    const onBoom = () => {
-        boom(); // ✅ 관리자 명령으로만 실행
-    };
-
-    sock.on('boom', onBoom);
-    return () => {
-        sock.off('boom', onBoom);
-    };
-    }, [isNicknameSet]); 
-
-
     /**
      * 키 입력 처리
      * - 좌: 37, 우: 39, 하: 40, 상: 38(회전), 스페이스: 32(하드드롭)
@@ -327,7 +309,9 @@ const Game: React.FC = () => {
             } else if (keyCode === 32) {
                 hardDrop();
             }
-            
+            else if (keyCode === 82) { // b/B
+                boom();
+            }
         }
     };
 
