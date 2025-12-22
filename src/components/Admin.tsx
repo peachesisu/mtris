@@ -195,8 +195,31 @@ const Admin: React.FC = () => {
               {Object.entries(sessions).map(([id, player]) => (
                 <div key={id} style={cardStyle}>
                   <h1 style={{ color: '#dfd924' }}>{player.nickname || 'Anonymous'}</h1>
-                  <div style={{ marginBottom: '10px' }}>
+                  <div style={{ marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
                     <Display text={`Score: ${player.score}`} />
+                    <button
+                      onClick={() => {
+                        if (socket) {
+                          socket.emit('admin_boom', id);
+                        }
+                      }}
+                      style={{
+                        padding: '8px 12px',
+                        background: '#e74c3c',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                        fontFamily: "'Orbitron', sans-serif",
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        transition: 'background 0.2s',
+                      }}
+                      onMouseOver={(e) => (e.currentTarget.style.background = '#c0392b')}
+                      onMouseOut={(e) => (e.currentTarget.style.background = '#e74c3c')}
+                    >
+                      REMOVE RED LINE
+                    </button>
                   </div>
                   <div style={boardWrapStyle}>
                     <div style={boardViewportStyle}>

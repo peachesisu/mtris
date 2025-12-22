@@ -43,6 +43,12 @@ io.on('connection', (socket) => {
         io.emit('session_update', activeSessions);
     });
 
+    // Admin triggers boom for a specific player
+    socket.on('admin_boom', (targetId) => {
+        console.log(`Admin triggered boom for: ${targetId}`);
+        io.to(targetId).emit('admin_boom');
+    });
+
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
         delete activeSessions[socket.id];

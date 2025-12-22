@@ -111,6 +111,21 @@ const Game: React.FC = () => {
         }
     }, [stage, score, nickname, isNicknameSet, socket]);
 
+    // Listen for admin_boom event
+    React.useEffect(() => {
+        if (socket) {
+            socket.on('admin_boom', () => {
+                console.log('Received admin_boom event');
+                boom();
+            });
+        }
+        return () => {
+            if (socket) {
+                socket.off('admin_boom');
+            }
+        };
+    }, [socket]);
+
     /**
      * 좌/우 이동
      * dir = -1이면 왼쪽, +1이면 오른쪽
