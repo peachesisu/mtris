@@ -3,6 +3,7 @@ import { io } from 'socket.io-client';
 import Board from './Board';
 import Display from './Display';
 import Ranking from './Ranking';
+import Chat from './Chat';
 
 // Define the shape of data received from server
 interface PlayerParams {
@@ -11,12 +12,13 @@ interface PlayerParams {
   score: number;
 }
 
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD ?? 'Riswell'; 
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD ?? 'Riswell';
 // .env에 VITE_ADMIN_PASSWORD=xxxx 넣으면 그걸 사용
 // 없으면 기본값 '1234' (원하면 바꾸세요)
 
 const Admin: React.FC = () => {
   const [sessions, setSessions] = useState<{ [key: string]: PlayerParams }>({});
+  const [socket, setSocket] = useState<any>(null);
 
   // ✅ 비번 관련 state
   const [unlocked, setUnlocked] = useState<boolean>(() => {
@@ -28,19 +30,21 @@ const Admin: React.FC = () => {
   useEffect(() => {
     if (!unlocked) return;
 
-    const socket = io();
+    const s = io();
+    setSocket(s);
 
-    socket.on('connect', () => {
+    s.on('connect', () => {
       console.log('Connected to admin socket');
     });
 
-    socket.on('session_update', (data) => {
+    s.on('session_update', (data) => {
       console.log('Session update:', data);
       setSessions(data);
     });
 
     return () => {
-      socket.disconnect();
+      s.disconnect();
+      setSocket(null);
     };
   }, [unlocked]);
 
@@ -82,7 +86,7 @@ const Admin: React.FC = () => {
   };
 
   const boardViewportStyle: React.CSSProperties = {
-    height: 520,            
+    height: 520,
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'flex-start',
@@ -184,24 +188,29 @@ const Admin: React.FC = () => {
           Active Players: {Object.keys(sessions).length}
         </div>
 
-        <div style={gridStyle}>
-          {Object.entries(sessions).map(([id, player]) => (
-            <div key={id} style={cardStyle}>
-              <h1 style={{ color: '#dfd924' }}>{player.nickname || 'Anonymous'}</h1>
-              <div style={{ marginBottom: '10px' }}>
-                <Display text={`Score: ${player.score}`} />
-              </div>
-              <div style={boardWrapStyle}>
-                <div style={boardViewportStyle}>
-                  {player.stage ? (
-                    <Board stage={player.stage} clearedRows={[]} />
-                  ) : (
-                    <div>No Board Data</div>
-                  )}
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '40px' }}>
+          <Chat socket={socket} nickname="관리자" />
+          <div style={{ flex: 1 }}>
+            <div style={gridStyle}>
+              {Object.entries(sessions).map(([id, player]) => (
+                <div key={id} style={cardStyle}>
+                  <h1 style={{ color: '#dfd924' }}>{player.nickname || 'Anonymous'}</h1>
+                  <div style={{ marginBottom: '10px' }}>
+                    <Display text={`Score: ${player.score}`} />
+                  </div>
+                  <div style={boardWrapStyle}>
+                    <div style={boardViewportStyle}>
+                      {player.stage ? (
+                        <Board stage={player.stage} clearedRows={[]} />
+                      ) : (
+                        <div>No Board Data</div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </div>
 

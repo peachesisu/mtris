@@ -20,12 +20,13 @@ import Ranking from './Ranking';
 import titleImg from '../assets/MP-TETRIS-Title.png';
 import tetrisBgm from '../assets/tetrisbgm.mp3';
 import GameRules from './GameRules';
+import Chat from './Chat';
 import { io, Socket } from 'socket.io-client';
 
 const Game: React.FC = () => {
     // 게임 영역 포커스용 ref (키보드 입력을 바로 받기 위함)
     const gameAreaRef = React.useRef<HTMLDivElement>(null);
-    const socketRef = React.useRef<Socket | null>(null);
+    const [socket, setSocket] = useState<Socket | null>(null);
 
     // Initial Nickname State
     const [nickname, setNickname] = useState<string>('');
@@ -34,10 +35,11 @@ const Game: React.FC = () => {
     // Socket Connection
     React.useEffect(() => {
         // Connect to local backend (or configurable URL)
-        socketRef.current = io();
+        const s = io();
+        setSocket(s);
         return () => {
-            if (socketRef.current) {
-                socketRef.current.disconnect();
+            if (s) {
+                s.disconnect();
             }
         };
     }, []);
@@ -100,14 +102,14 @@ const Game: React.FC = () => {
 
     // Emit state update to server for Spectator Mode
     React.useEffect(() => {
-        if (socketRef.current && isNicknameSet) {
-            socketRef.current.emit('update_state', {
+        if (socket && isNicknameSet) {
+            socket.emit('update_state', {
                 nickname,
                 stage,
                 score
             });
         }
-    }, [stage, score, nickname, isNicknameSet]);
+    }, [stage, score, nickname, isNicknameSet, socket]);
 
     /**
      * 좌/우 이동
@@ -176,9 +178,9 @@ const Game: React.FC = () => {
             type StageCell = (typeof stage)[number][number];
 
             const emptyRow: StageCell[] = Array.from({ length: width }, () => ({
-            value: 0,
-            status: 'clear',
-            num: 0,
+                value: 0,
+                status: 'clear',
+                num: 0,
             })) as StageCell[];
 
 
@@ -192,17 +194,17 @@ const Game: React.FC = () => {
             //      (3) num 합 < 60 (빨간 줄)
             let targetIdx = -1;
             for (let y = height - 1; y >= 0; y--) {
-            const row = newStage[y];
+                const row = newStage[y];
 
-            const isFull = row.every((c) => c.value !== 0);
-            const isMergedRow = row.every((c) => c.status === 'merged');
-            if (!isFull || !isMergedRow) continue;
+                const isFull = row.every((c) => c.value !== 0);
+                const isMergedRow = row.every((c) => c.status === 'merged');
+                if (!isFull || !isMergedRow) continue;
 
-            const rowSum = row.reduce((sum, c) => sum + (c.num || 0), 0);
-            if (rowSum < CLEAR_THRESHOLD) {
-                targetIdx = y;
-                break;
-            }
+                const rowSum = row.reduce((sum, c) => sum + (c.num || 0), 0);
+                if (rowSum < CLEAR_THRESHOLD) {
+                    targetIdx = y;
+                    break;
+                }
             }
 
             // 빨간 줄이 없으면 그대로
@@ -216,7 +218,7 @@ const Game: React.FC = () => {
         });
     };
 
-    
+
 
 
     /**
@@ -397,9 +399,11 @@ const Game: React.FC = () => {
                 ref={gameAreaRef}
             >
                 {/* 게임 룰 */}
-                <aside className="game-rules-panel">
+                <aside className="game-rules-panel" >
                     <div style={{ height: '20px' }} />
                     <GameRules />
+                    <div style={{ height: '20px' }} />
+                    <Chat socket={socket} nickname={nickname} />
                 </aside>
 
                 <div className="game-container">
@@ -494,22 +498,22 @@ const Game: React.FC = () => {
                     <Ranking />
                 </aside>
             </div>
-                        <div
-  style={{
-    position: 'fixed',
-    right: '16px',
-    bottom: '12px',
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: '15px',
-    fontFamily: "'Orbitron', sans-serif",
-    zIndex: 9999,
-    userSelect: 'none',
-    pointerEvents: 'none',
-  }}
->
-  © 2025 MP TETRIS. All rights reserved. / 
-  개발자 : 32기 김유경, 25기 김소희
-</div>
+            <div
+                style={{
+                    position: 'fixed',
+                    right: '16px',
+                    bottom: '12px',
+                    color: 'rgba(255,255,255,0.6)',
+                    fontSize: '15px',
+                    fontFamily: "'Orbitron', sans-serif",
+                    zIndex: 9999,
+                    userSelect: 'none',
+                    pointerEvents: 'none',
+                }}
+            >
+                © 2025 MP TETRIS. All rights reserved. /
+                개발자 : 32기 김유경, 25기 김소희
+            </div>
 
         </div>
     );
