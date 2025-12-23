@@ -1,8 +1,12 @@
 import React from 'react';
 
-const GameRules: React.FC = () => {
-    const boxStyle: React.CSSProperties = {
+interface Props {
+    redlineThreshold?: number;
+    gameMode?: 'MP' | 'Normal';
+}
 
+const GameRules: React.FC<Props> = ({ redlineThreshold = 60, gameMode = 'MP' }) => {
+    const boxStyle: React.CSSProperties = {
         padding: '20px',
         background: 'rgba(0, 0, 0, 0.8)',
         border: '1px solid #333',
@@ -89,16 +93,29 @@ const GameRules: React.FC = () => {
             </div>
 
             <div style={sectionStyle}>
-                <h4 style={subTitleStyle}>RULES</h4>
-                <div style={ruleItemStyle}>
-                    • Complete rows to score.
-                </div>
-                <div style={ruleItemStyle}>
-                    • <span style={{ color: '#ff00ff' }}>SUM ≥ 60</span> to clear a line!
-                </div>
-                <div style={ruleItemStyle}>
-                    • <span style={{ color: '#ff0000' }}>RED</span> numbers mean the row is full but sum is too low.
-                </div>
+                <h4 style={subTitleStyle}>RULES ({gameMode})</h4>
+                {gameMode === 'MP' ? (
+                    <>
+                        <div style={ruleItemStyle}>
+                            • Complete rows to score.
+                        </div>
+                        <div style={ruleItemStyle}>
+                            • <span style={{ color: '#ff00ff' }}>SUM ≥ {redlineThreshold}</span> to clear a line!
+                        </div>
+                        <div style={ruleItemStyle}>
+                            • <span style={{ color: '#ff0000' }}>RED</span> numbers mean the row is full but sum is too low.
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <div style={ruleItemStyle}>
+                            • Complete rows to score.
+                        </div>
+                        <div style={ruleItemStyle}>
+                            • Play Free!
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );

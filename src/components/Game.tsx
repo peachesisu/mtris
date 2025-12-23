@@ -34,6 +34,7 @@ const Game: React.FC = () => {
     const [isNicknameSet, setIsNicknameSet] = useState(false);
     const [gameMode, setGameMode] = useState<'MP' | 'Normal'>('MP');
     const [activeSessions, setActiveSessions] = useState<{ [key: string]: any }>({});
+    const [redlineThreshold, setRedlineThreshold] = useState<number>(60);
 
     // Socket Connection
     React.useEffect(() => {
@@ -43,6 +44,10 @@ const Game: React.FC = () => {
 
         s.on('session_update', (sessions) => {
             setActiveSessions(sessions);
+        });
+
+        s.on('threshold_update', (val: number) => {
+            setRedlineThreshold(val);
         });
 
         return () => {
@@ -84,7 +89,7 @@ const Game: React.FC = () => {
      * - scoreDelta: 이번 프레임에서 증가할 점수량(줄 수 기반)
      * - clearedRows: 이번에 지워진 줄의 인덱스 목록
      */
-    const [stage, setStage, rowsCleared, scoreDelta, clearedRows] = useStage(player, resetPlayer, gameMode);
+    const [stage, setStage, rowsCleared, scoreDelta, clearedRows] = useStage(player, resetPlayer, gameMode, redlineThreshold);
 
     const playerRef = React.useRef(player);
     React.useEffect(() => {
@@ -176,7 +181,6 @@ const Game: React.FC = () => {
         audio.pause();
         audio.currentTime = 0;
     }
-    const CLEAR_THRESHOLD = 60; // "합이 60 이상이면 삭제" 기준과 동일하게 맞추기
 
     const boom = useCallback(() => {
         setStage((prev) => {
@@ -202,7 +206,7 @@ const Game: React.FC = () => {
             // 아래에서부터 "빨간 줄" 찾기
             // 조건: (1) 꽉 찼음 (value != 0)
             //      (2) 전부 merged(고정된 블록만)  -> 떨어지는 블록 줄 삭제 방지
-            //      (3) num 합 < 60 (빨간 줄)
+            //      (3) num 합 < threshold (빨간 줄)
             let targetIdx = -1;
             for (let y = height - 1; y >= 0; y--) {
                 const row = newStage[y];
@@ -212,7 +216,7 @@ const Game: React.FC = () => {
                 if (!isFull || !isMergedRow) continue;
 
                 const rowSum = row.reduce((sum, c) => sum + (c.num || 0), 0);
-                if (rowSum < CLEAR_THRESHOLD) {
+                if (rowSum < redlineThreshold) {
                     targetIdx = y;
                     break;
                 }
@@ -227,7 +231,7 @@ const Game: React.FC = () => {
 
             return newStage;
         });
-    }, [setStage]);
+    }, [setStage, redlineThreshold, stage]);
 
     // Listen for admin_boom event
     React.useEffect(() => {
@@ -401,7 +405,7 @@ const Game: React.FC = () => {
                                         fontFamily: "'Orbitron', sans-serif", transition: '0.3s'
                                     }}
                                 >
-                                    MP MODE (60)
+                                    MP MODE ({redlineThreshold})
                                 </button>
                                 <button
                                     type="button"
@@ -463,7 +467,7 @@ const Game: React.FC = () => {
                 {/* 게임 룰 */}
                 <aside className="game-rules-panel" >
                     <div style={{ height: '20px' }} />
-                    <GameRules />
+                    <GameRules redlineThreshold={redlineThreshold} gameMode={gameMode} />
                     <div style={{ height: '20px' }} />
                     <Chat socket={socket} nickname={nickname} />
                 </aside>
@@ -471,6 +475,21 @@ const Game: React.FC = () => {
                 <div className="game-container">
                     {/* 왼쪽 패널: 상태 표시 + 시작 버튼 */}
                     <aside className="game-status">
+                        <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+                            <span style={{
+                                fontSize: '14px',
+                                padding: '4px 10px',
+                                borderRadius: '15px',
+                                background: gameMode === 'Normal' ? '#00ff00' : '#dfd924',
+                                color: 'black',
+                                fontWeight: 'bold',
+                                textShadow: 'none',
+                                fontFamily: "'Orbitron', sans-serif",
+                                display: 'inline-block'
+                            }}>
+                                {gameMode === 'Normal' ? 'NORMAL MODE' : `MP MODE (${redlineThreshold})`}
+                            </span>
+                        </div>
                         <div style={{
                             fontSize: '24px', color: '#dfd924', marginBottom: '20px', textAlign: 'center',
                             textShadow: '0 0 10px rgba(223, 217, 36, 0.5)'
@@ -489,7 +508,7 @@ const Game: React.FC = () => {
                     {/* 가운데: 게임 보드 */}
                     <div className="board-container">
                         {/* Board에 clearedRows 전달 */}
-                        <Board stage={stage} clearedRows={clearedRows} />
+                        <Board stage={stage} clearedRows={clearedRows} redlineThreshold={redlineThreshold} />
 
                         {/* 게임 오버 시 오버레이 */}
                         {gameOver && (

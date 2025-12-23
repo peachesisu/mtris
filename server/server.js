@@ -25,9 +25,26 @@ app.use(bodyParser.json());
 
 // Socket.io Logic
 let activeSessions = {}; // socketId -> { nickname, board, score }
+let redlineThreshold = 60; // Global threshold for MP mode
+
+// Load threshold from DB on startup
+function loadSettings() {
+    db.get("SELECT value FROM settings WHERE key = 'redlineThreshold'", (err, row) => {
+        if (row) {
+            redlineThreshold = Number(row.value);
+            console.log(`Loaded redlineThreshold from DB: ${redlineThreshold}`);
+        } else {
+            // If doesn't exist, create it
+            db.run("INSERT OR IGNORE INTO settings (key, value) VALUES ('redlineThreshold', '60')");
+        }
+    });
+}
 
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
+
+    // Send current threshold on connection
+    socket.emit('threshold_update', redlineThreshold);
 
     // Chat message
     socket.on('chat_message', (msg) => {
@@ -42,6 +59,25 @@ io.on('connection', (socket) => {
         activeSessions[socket.id] = data;
         // Broadcast to admins (or everyone for simplicity in this demo)
         io.emit('session_update', activeSessions);
+    });
+
+    // Admin updates redline threshold
+    socket.on('update_threshold', (val) => {
+        const newVal = Number(val);
+        if (Number.isFinite(newVal) && newVal >= 0) {
+            redlineThreshold = newVal;
+            console.log(`Threshold updated to ${redlineThreshold} by ${socket.id}`);
+            io.emit('threshold_update', redlineThreshold);
+
+            // Broadcast system message to chat
+            io.emit('chat_message', {
+                nickname: 'SYSTEM',
+                text: `[공지] 레드라인 삭제 기준 점수가 ${newVal}점으로 변경되었습니다.`
+            });
+
+            // Save to DB
+            db.run("INSERT OR REPLACE INTO settings (key, value) VALUES ('redlineThreshold', ?)", [newVal.toString()]);
+        }
     });
 
     // Admin triggers boom for a specific player
@@ -128,6 +164,11 @@ const db = new sqlite3.Database(dbPath, (err) => {
         console.error('Could not connect to database', err);
     } else {
         console.log('Connected to sqlite database');
+        // Create settings table and load values
+        db.serialize(() => {
+            db.run("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)");
+            loadSettings();
+        });
     }
 });
 

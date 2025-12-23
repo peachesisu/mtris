@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createStage } from '../gameHelpers';
 
-export const useStage = (player: any, resetPlayer: () => void, gameMode: 'MP' | 'Normal' = 'MP') => {
+export const useStage = (player: any, resetPlayer: () => void, gameMode: 'MP' | 'Normal' = 'MP', redlineThreshold: number = 60) => {
     const [stage, setStage] = useState(createStage());
     const [rowsCleared, setRowsCleared] = useState(0);
     const [scoreDelta, setScoreDelta] = useState(0);
@@ -25,8 +25,8 @@ export const useStage = (player: any, resetPlayer: () => void, gameMode: 'MP' | 
                         0
                     );
 
-                    // Normal mode clears any full row. MP mode requires rowScore >= 60.
-                    if (gameMode === 'Normal' || rowScore >= 60) {
+                    // Normal mode clears any full row. MP mode requires rowScore >= redlineThreshold.
+                    if (gameMode === 'Normal' || rowScore >= redlineThreshold) {
                         currentScoreDelta += rowScore;
                         rowsToClear.push(y);
 

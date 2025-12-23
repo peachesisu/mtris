@@ -20,6 +20,7 @@ const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD ?? 'Riswell';
 const Admin: React.FC = () => {
   const [sessions, setSessions] = useState<{ [key: string]: PlayerParams }>({});
   const [socket, setSocket] = useState<any>(null);
+  const [threshold, setThreshold] = useState<number>(60);
 
   // ✅ 비번 관련 state
   const [unlocked, setUnlocked] = useState<boolean>(() => {
@@ -41,6 +42,11 @@ const Admin: React.FC = () => {
     s.on('session_update', (data) => {
       console.log('Session update:', data);
       setSessions(data);
+    });
+
+    s.on('threshold_update', (val: number) => {
+      console.log('Threshold update:', val);
+      setThreshold(val);
     });
 
     return () => {
@@ -164,7 +170,6 @@ const Admin: React.FC = () => {
 
   return (
     <>
-      <div style={{ width: '100px' }} />
       <div style={containerStyle}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <h1 style={{ margin: 0 }}>SPECTATOR MODE</h1>
@@ -185,8 +190,42 @@ const Admin: React.FC = () => {
           </button>
         </div>
 
-        <div style={{ fontSize: '20px', marginBottom: '30px' }}>
-          Active Players: {Object.keys(sessions).length}
+        <div style={{ display: 'flex', gap: '30px', alignItems: 'center', marginBottom: '20px', marginTop: '10px' }}>
+          <div style={{ fontSize: '20px' }}>
+            Active Players: {Object.keys(sessions).length}
+          </div>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '15px',
+            background: 'rgba(223, 217, 36, 0.1)',
+            padding: '10px 20px',
+            borderRadius: '10px',
+            border: '1px solid rgba(223, 217, 36, 0.3)'
+          }}>
+            <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#dfd924' }}>RED LINE: {threshold}</span>
+            <div style={{ display: 'flex', gap: '5px' }}>
+              <button
+                onClick={() => socket?.emit('update_threshold', threshold - 1)}
+                style={{ padding: '5px 10px', background: '#333', color: 'white', border: '1px solid #555', borderRadius: '4px', cursor: 'pointer' }}
+              >
+                -1
+              </button>
+              <button
+                onClick={() => socket?.emit('update_threshold', threshold + 1)}
+                style={{ padding: '5px 10px', background: '#333', color: 'white', border: '1px solid #555', borderRadius: '4px', cursor: 'pointer' }}
+              >
+                +1
+              </button>
+              <button
+                onClick={() => socket?.emit('update_threshold', 60)}
+                style={{ marginLeft: '10px', padding: '5px 10px', background: '#dfd924', color: 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                RESET (60)
+              </button>
+            </div>
+          </div>
         </div>
 
         <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '40px' }}>
@@ -240,7 +279,7 @@ const Admin: React.FC = () => {
                   <div style={boardWrapStyle}>
                     <div style={boardViewportStyle}>
                       {player.stage ? (
-                        <Board stage={player.stage} clearedRows={[]} />
+                        <Board stage={player.stage} clearedRows={[]} redlineThreshold={threshold} />
                       ) : (
                         <div>No Board Data</div>
                       )}
